@@ -2,21 +2,61 @@
 'use strict';
 
 var Client = require("./Client.bs.js");
+var Future = require("reason-future/src/Future.bs.js");
+var Js_mapperRt = require("bs-platform/lib/js/js_mapperRt.js");
 
-function authRequest(param) {
-  return Client.request("https://reason-test.auth.us-east-1.amazoncognito.com/oauth2/authorize", param);
+var jsMapperConstantArray = /* array */[
+  /* tuple */[
+    660140761,
+    "token"
+  ],
+  /* tuple */[
+    748543309,
+    "code"
+  ]
+];
+
+function response_typeToJs(param) {
+  return Js_mapperRt.binarySearch(2, param, jsMapperConstantArray);
 }
 
-Client.request("https://reason-test.auth.us-east-1.amazoncognito.com/oauth2/authorize", /* record */[
-      /* headers */undefined,
-      /* queryString *//* :: */[
-        /* record */[
-          /* key */"test",
-          /* value */"value"
-        ],
-        /* [] */0
-      ]
-    ]);
+function response_typeFromJs(param) {
+  return Js_mapperRt.revSearch(2, jsMapperConstantArray, param);
+}
 
-exports.authRequest = authRequest;
+var params = { };
+
+params["ClientId"] = "3vjshpa4lgf92nfisjrg9os21a";
+
+params["Username"] = "patrick";
+
+params["Password"] = "Password123!";
+
+params["Password"] = "Password123!";
+
+params["UserAttributes"] = /* array */[];
+
+params["ValidationData"] = /* array */[];
+
+Future.mapOk(Future.mapError(Client.request("SignUp", params), (function (err) {
+            switch (err.tag | 0) {
+              case 0 : 
+                  console.log("Network err");
+                  return /* () */0;
+              case 1 : 
+                  console.log("Invalid param: ", err[0]);
+                  return /* () */0;
+              case 2 : 
+                  console.log("Unhandled Err");
+                  return /* () */0;
+              
+            }
+          })), (function (param) {
+        console.log("OKAY!");
+        return /* () */0;
+      }));
+
+exports.response_typeToJs = response_typeToJs;
+exports.response_typeFromJs = response_typeFromJs;
+exports.params = params;
 /*  Not a pure module */

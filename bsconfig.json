@@ -10,7 +10,7 @@
     "in-source": true
   },
   "suffix": ".bs.js",
-  "bs-dependencies": ["bs-fetch"],
+  "bs-dependencies": ["bs-fetch", "reason-future"],
   "warnings": {
     "error": "+101"
   },

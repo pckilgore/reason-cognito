@@ -4,7 +4,7 @@
   "scripts": {
     "clean": "bsb -clean-world",
     "build": "bsb -make-world",
-    "watch": "bsb -make-world -w",
+    "start": "bsb -make-world -w",
     "test": "node src/scratch.bs.js"
   },
   "keywords": [
@@ -13,10 +13,12 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "bs-platform": "^5.0.6"
+    "bs-platform": "^5.0.6",
+    "serve": "^11.1.0"
   },
   "dependencies": {
     "bs-fetch": "^0.5.0",
-    "isomorphic-fetch": "^2.2.1"
+    "isomorphic-fetch": "^2.2.1",
+    "reason-future": "^2.5.0"
   }
 }

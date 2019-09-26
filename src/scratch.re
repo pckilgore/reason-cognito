@@ -6,13 +6,24 @@ type config = {
   client_id: string,
 };
 
-let authorization = authConfig => {
-  let request =
-    Client.request(
-      "https://reason-test.auth.us-east-1.amazoncognito.com/oauth2/authorize",
-    );
+let params = Js.Dict.empty();
+Js.Dict.set(
+  params,
+  "ClientId",
+  Js.Json.string("3vjshpa4lgf92nfisjrg9os21a"),
+);
+Js.Dict.set(params, "Username", Js.Json.string("patrick"));
+Js.Dict.set(params, "Password", Js.Json.string("Password123!"));
+Js.Dict.set(params, "Password", Js.Json.string("Password123!"));
+Js.Dict.set(params, "UserAttributes", Js.Json.array([||]));
+Js.Dict.set(params, "ValidationData", Js.Json.array([||]));
 
-  let response = request({queryString: authQueryString, headers: None});
-
-  Js.log(response);
-};
+Client.request("SignUp", params)
+->Future.mapError(err =>
+    switch (err) {
+    | NetworkError(_) => Js.log("Network err")
+    | InvalidParameterException(msg) => Js.log2("Invalid param: ", msg)
+    | _ => Js.log("Unhandled Err")
+    }
+  )
+->Future.mapOk(_ => Js.log("OKAY!"));
