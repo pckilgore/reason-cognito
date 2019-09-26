@@ -19,11 +19,11 @@ Js.Dict.set(params, "UserAttributes", Js.Json.array([||]));
 Js.Dict.set(params, "ValidationData", Js.Json.array([||]));
 
 Client.request("SignUp", params)
-->Future.mapError(err =>
-    switch (err) {
-    | NetworkError(_) => Js.log("Network err")
-    | InvalidParameterException(msg) => Js.log2("Invalid param: ", msg)
-    | _ => Js.log("Unhandled Err")
+->Future.mapError(err => Js.log(err))
+->Future.mapOk(response =>
+    switch (response) {
+    | Ok => Js.log("hey it worked")
+    | InvalidParameterException(msg) => Js.log2("YAY", msg)
+    | _ => Js.log("TODO")
     }
-  )
-->Future.mapOk(_ => Js.log("OKAY!"));
+  );

@@ -15,30 +15,25 @@
 
 let idpEndpoint = "https://cognito-idp.us-east-2.amazonaws.com/";
 
-type networkError =
+[@bs.deriving abstract]
+type amznResponse = {
+  __type: string,
+  message: string,
+};
+
+external makeResponse: Js.Json.t => amznResponse = "%identity";
+
+type reasonCognitoResponse =
   | NetworkError(Js.Promise.error);
+
+type amazonResponse =
+  | Ok
+  | InvalidParameterException(string)
+  | ReasonCognitoUnknownErrorException(string);
 
 let makeNetworkError = err => {
   NetworkError(err);
 };
-
-[@bs.deriving abstract]
-type amazonHeaders = {
-  [@bs.as "x-amzn-errortype"]
-  errorType: array(string),
-  [@bs.as "x-amzn-errormessage"]
-  errorMessage: array(string),
-};
-
-[@bs.deriving abstract]
-type amazonHeadersWrapper = {_headers: amazonHeaders};
-
-external headersUnwrap: Fetch.headers => amazonHeadersWrapper = "%identity";
-
-type reasonCognitoResponse =
-  | NetworkError(string)
-  | InvalidParameterException(string)
-  | ReasonCognitoUnknownErrorException(string);
 
 let request = (operation, params: Js.Dict.t(Js.Json.t)) => {
   let headers = Js.Dict.empty();
@@ -63,29 +58,18 @@ let request = (operation, params: Js.Dict.t(Js.Json.t)) => {
     ),
   )
   ->FutureJs.fromPromise(makeNetworkError)
-  ->Future.mapError(err => {
-      Js.log2("Network Error", err);
-      // TODO: More robustness here.
-      Belt.Result.Error(
-        NetworkError(
-          "There was a network error in the Reason-Cognito Library.",
-        ),
-      );
-    })
-  ->Future.mapOk(Fetch.Response.headers)
-  ->Future.map(Belt.Result.getExn)
-  ->Future.map(headers => {
-      let errors = headersUnwrap(headers)->_headersGet;
-      let err = errors->errorTypeGet->Array.get(0);
-      let msg = errors->errorMessageGet->Array.get(0);
+  ->Future.mapOk(Fetch.Response.json)
+  ->Future.flatMapOk(json => json->FutureJs.fromPromise(makeNetworkError))
+  ->Future.mapOk(makeResponse)
+  ->Future.mapOk(resp => {
+      let err = resp->__typeGet;
+      let msg = resp->messageGet;
+
       switch (err) {
-      | "InvalidParameterException:" =>
-        Belt.Result.Error(InvalidParameterException(msg))
+      | "InvalidParameterException" => InvalidParameterException(msg)
       | _ =>
-        Belt.Result.Error(
-          ReasonCognitoUnknownErrorException(
-            "AWS Cognito returned an undocumented error code.",
-          ),
+        ReasonCognitoUnknownErrorException(
+          "AWS Cognito returned an undocumented error code.",
         )
       };
     });

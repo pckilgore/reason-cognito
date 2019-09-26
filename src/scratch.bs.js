@@ -39,21 +39,19 @@ params["UserAttributes"] = /* array */[];
 params["ValidationData"] = /* array */[];
 
 Future.mapOk(Future.mapError(Client.request("SignUp", params), (function (err) {
-            switch (err.tag | 0) {
-              case 0 : 
-                  console.log("Network err");
-                  return /* () */0;
-              case 1 : 
-                  console.log("Invalid param: ", err[0]);
-                  return /* () */0;
-              case 2 : 
-                  console.log("Unhandled Err");
-                  return /* () */0;
-              
-            }
-          })), (function (param) {
-        console.log("OKAY!");
-        return /* () */0;
+            console.log(err);
+            return /* () */0;
+          })), (function (response) {
+        if (typeof response === "number") {
+          console.log("hey it worked");
+          return /* () */0;
+        } else if (response.tag) {
+          console.log("TODO");
+          return /* () */0;
+        } else {
+          console.log("YAY", response[0]);
+          return /* () */0;
+        }
       }));
 
 exports.response_typeToJs = response_typeToJs;
