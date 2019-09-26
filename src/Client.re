@@ -15,21 +15,8 @@
 
 let idpEndpoint = "https://cognito-idp.us-east-2.amazonaws.com/";
 
-[@bs.deriving abstract]
-type amznResponse = {
-  __type: string,
-  message: string,
-};
-
-external makeResponse: Js.Json.t => amznResponse = "%identity";
-
 type reasonCognitoResponse =
   | NetworkError(Js.Promise.error);
-
-type amazonResponse =
-  | Ok
-  | InvalidParameterException(string)
-  | ReasonCognitoUnknownErrorException(string);
 
 let makeNetworkError = err => {
   NetworkError(err);
@@ -37,6 +24,12 @@ let makeNetworkError = err => {
 
 let request = (operation, params: Js.Dict.t(Js.Json.t)) => {
   let headers = Js.Dict.empty();
+
+  Js.Dict.set(
+    params,
+    "ClientId",
+    Js.Json.string("3vjshpa4lgf92nfisjrg9os21a"),
+  );
 
   Js.Dict.set(headers, "Content-Type", "application/x-amz-json-1.1");
   Js.Dict.set(headers, "X-Amz-User-Agent", "aws-amplify/0.1.x js");
@@ -59,20 +52,7 @@ let request = (operation, params: Js.Dict.t(Js.Json.t)) => {
   )
   ->FutureJs.fromPromise(makeNetworkError)
   ->Future.mapOk(Fetch.Response.json)
-  ->Future.flatMapOk(json => json->FutureJs.fromPromise(makeNetworkError))
-  ->Future.mapOk(makeResponse)
-  ->Future.mapOk(resp => {
-      let err = resp->__typeGet;
-      let msg = resp->messageGet;
-
-      switch (err) {
-      | "InvalidParameterException" => InvalidParameterException(msg)
-      | _ =>
-        ReasonCognitoUnknownErrorException(
-          "AWS Cognito returned an undocumented error code.",
-        )
-      };
-    });
+  ->Future.flatMapOk(json => json->FutureJs.fromPromise(makeNetworkError));
 };
 
 type keyValuePair = {
