@@ -4,6 +4,7 @@
 var Future = require("reason-future/src/Future.bs.js");
 var Cognito = require("./Cognito.bs.js");
 var Js_mapperRt = require("bs-platform/lib/js/js_mapperRt.js");
+var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
 
 var jsMapperConstantArray = /* array */[
   /* tuple */[
@@ -39,13 +40,21 @@ Future.mapOk(Future.mapError(Cognito.signUp("patrickasdf", "123Password#", /* ar
               console.log("hey it worked", response[0]);
               return /* () */0;
           case 1 : 
-          case 2 : 
-              console.log("Errmsg: ", response[0]);
-              return /* () */0;
-          case 3 : 
               console.log(response[0]);
               return /* () */0;
-          
+          case 6 : 
+          case 15 : 
+              console.log("Errmsg: ", response[0]);
+              return /* () */0;
+          default:
+            throw [
+                  Caml_builtin_exceptions.match_failure,
+                  /* tuple */[
+                    "scratch.re",
+                    20,
+                    4
+                  ]
+                ];
         }
       }));
 

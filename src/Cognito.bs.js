@@ -7,46 +7,61 @@ var Client = require("./Client.bs.js");
 var Future = require("reason-future/src/Future.bs.js");
 var Js_dict = require("bs-platform/lib/js/js_dict.js");
 
+function jsonMapString(arr) {
+  return $$Array.map((function (item) {
+                return Js_dict.map((function (value) {
+                              return value;
+                            }), item);
+              }), arr);
+}
+
 function signUp(username, password, $staropt$star, $staropt$star$1, param) {
   var attributes = $staropt$star !== undefined ? $staropt$star : /* array */[];
   var validationData = $staropt$star$1 !== undefined ? $staropt$star$1 : /* array */[];
+  var jsonAttribs = jsonMapString(attributes);
+  var jsonVData = jsonMapString(validationData);
   var params = { };
-  var jsonAttribs = $$Array.map((function (attrib) {
-          return Js_dict.map((function (av) {
-                        return av;
-                      }), attrib);
-        }), attributes);
   params["Username"] = username;
   params["Password"] = password;
   params["UserAttributes"] = jsonAttribs;
-  params["ValidationData"] = validationData;
+  params["ValidationData"] = jsonVData;
   return Future.mapOk(Client.request("SignUp", params), (function (resp) {
                 var err = resp.__type;
                 var msg = resp.message;
                 console.log("Raw Response", resp);
+                var exit = 0;
                 switch (err) {
                   case "InvalidParameterException" : 
-                      return /* InvalidParameterException */Block.__(1, [msg]);
+                      return /* InvalidParameterException */Block.__(6, [msg]);
+                  case "UserLambdaValidationException" : 
+                      exit = 1;
+                      break;
                   case "UsernameExistsException" : 
-                      return /* UsernameExistsException */Block.__(2, [msg]);
+                      return /* UsernameExistsException */Block.__(15, [msg]);
                   default:
-                    var cddDecoder = resp.CodeDeliveryDetails;
-                    var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
-                    var codeDeliveryDetails_001 = /* deliveryMedium */cddDecoder.DeliveryMedium;
-                    var codeDeliveryDetails_002 = /* destination */cddDecoder.Destination;
-                    var codeDeliveryDetails = /* record */[
-                      codeDeliveryDetails_000,
-                      codeDeliveryDetails_001,
-                      codeDeliveryDetails_002
-                    ];
-                    return /* Ok */Block.__(0, [/* record */[
-                                /* codeDeliveryDetails */codeDeliveryDetails,
-                                /* userConfirmed */resp.UserConfirmed,
-                                /* userSub */resp.UserSub
-                              ]]);
+                    exit = 1;
                 }
+                if (exit === 1) {
+                  var cddDecoder = resp.CodeDeliveryDetails;
+                  var match = cddDecoder.DeliveryMedium === "EMAIL";
+                  var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
+                  var codeDeliveryDetails_001 = /* deliveryMedium */match ? /* Email */0 : /* SMS */1;
+                  var codeDeliveryDetails_002 = /* destination */cddDecoder.Destination;
+                  var codeDeliveryDetails = /* record */[
+                    codeDeliveryDetails_000,
+                    codeDeliveryDetails_001,
+                    codeDeliveryDetails_002
+                  ];
+                  return /* Ok */Block.__(0, [/* record */[
+                              /* codeDeliveryDetails */codeDeliveryDetails,
+                              /* userConfirmed */resp.UserConfirmed,
+                              /* userSub */resp.UserSub
+                            ]]);
+                }
+                
               }));
 }
 
+exports.jsonMapString = jsonMapString;
 exports.signUp = signUp;
 /* Client Not a pure module */
