@@ -10,11 +10,7 @@ type auth_params_bsd = {
   [@bs.as "PASSWORD"]
   password: string,
 };
-// [@bs.deriving {abstract: light}]
-// type passWord = {
-//   [@bs.as "Password"]
-//   password: string,
-// };
+
 [@bs.deriving {abstract: light}]
 type params_bsd = {
   [@bs.as "AuthFlow"]
