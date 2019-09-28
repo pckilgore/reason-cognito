@@ -30,7 +30,7 @@ emailAttribute["Name"] = "email";
 
 emailAttribute["Value"] = "reasoncog@pck.email";
 
-Future.mapOk(Future.mapError(Cognito.signUp("patrickasdf", "123Password#", /* array */[emailAttribute], undefined, /* () */0), (function (err) {
+Future.mapOk(Future.mapError(Cognito.initiateAuth("idkjs", "123Password#", /* () */0), (function (err) {
             console.log(err);
             return /* () */0;
           })), (function (response) {

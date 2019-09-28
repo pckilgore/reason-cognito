@@ -3,6 +3,7 @@
 
 var List = require("bs-platform/lib/js/list.js");
 var Fetch = require("bs-fetch/src/Fetch.js");
+var Types = require("./Types.bs.js");
 var Future = require("reason-future/src/Future.bs.js");
 var FutureJs = require("reason-future/src/FutureJs.bs.js");
 var Caml_option = require("bs-platform/lib/js/caml_option.js");
@@ -20,7 +21,7 @@ function request(operation, params) {
   params["ClientId"] = "3vjshpa4lgf92nfisjrg9os21a";
   headers["Content-Type"] = "application/x-amz-json-1.1";
   headers["X-Amz-User-Agent"] = "aws-amplify/0.1.x js";
-  headers["X-Amz-Target"] = "AWSCognitoIdentityProviderService." + operation;
+  headers["X-Amz-Target"] = "AWSCognitoIdentityProviderService." + Types.operationToJs(operation);
   return Future.flatMapOk(Future.mapOk(FutureJs.fromPromise(fetch(idpEndpoint, Fetch.RequestInit[/* make */0](/* Post */2, Caml_option.some(headers), Caml_option.some(JSON.stringify(params)), undefined, undefined, /* NoCORS */2, undefined, /* NoCache */3, undefined, undefined, undefined)(/* () */0)), makeNetworkError), (function (prim) {
                     return prim.json();
                   })), (function (json) {

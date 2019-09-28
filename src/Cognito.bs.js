@@ -20,7 +20,114 @@ function signUp(username, password, $staropt$star, $staropt$star$1, param) {
   params["Password"] = password;
   params["UserAttributes"] = jsonAttribs;
   params["ValidationData"] = validationData;
-  return Future.mapOk(Client.request("SignUp", params), (function (resp) {
+  return Future.mapOk(Client.request(/* SignUp */-384133096, params), (function (resp) {
+                var err = resp.__type;
+                var msg = resp.message;
+                console.log("Raw Response", resp);
+                switch (err) {
+                  case "InvalidParameterException" : 
+                      return /* InvalidParameterException */Block.__(1, [msg]);
+                  case "UsernameExistsException" : 
+                      return /* UsernameExistsException */Block.__(2, [msg]);
+                  default:
+                    var cddDecoder = resp.CodeDeliveryDetails;
+                    var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
+                    var codeDeliveryDetails_001 = /* deliveryMedium */cddDecoder.DeliveryMedium;
+                    var codeDeliveryDetails_002 = /* destination */cddDecoder.Destination;
+                    var codeDeliveryDetails = /* record */[
+                      codeDeliveryDetails_000,
+                      codeDeliveryDetails_001,
+                      codeDeliveryDetails_002
+                    ];
+                    return /* Ok */Block.__(0, [/* record */[
+                                /* codeDeliveryDetails */codeDeliveryDetails,
+                                /* userConfirmed */resp.UserConfirmed,
+                                /* userSub */resp.UserSub
+                              ]]);
+                }
+              }));
+}
+
+function confirmSignUp(username, confirmationCode, param) {
+  var params = { };
+  params["Username"] = username;
+  params["ConfirmationCode"] = confirmationCode;
+  return Future.mapOk(Client.request(/* ConfirmSignUp */-606583560, params), (function (resp) {
+                var err = resp.__type;
+                var msg = resp.message;
+                console.log("Raw Response", resp);
+                switch (err) {
+                  case "InvalidParameterException" : 
+                      return /* InvalidParameterException */Block.__(1, [msg]);
+                  case "UsernameExistsException" : 
+                      return /* UsernameExistsException */Block.__(2, [msg]);
+                  default:
+                    var cddDecoder = resp.CodeDeliveryDetails;
+                    var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
+                    var codeDeliveryDetails_001 = /* deliveryMedium */cddDecoder.DeliveryMedium;
+                    var codeDeliveryDetails_002 = /* destination */cddDecoder.Destination;
+                    var codeDeliveryDetails = /* record */[
+                      codeDeliveryDetails_000,
+                      codeDeliveryDetails_001,
+                      codeDeliveryDetails_002
+                    ];
+                    return /* Ok */Block.__(0, [/* record */[
+                                /* codeDeliveryDetails */codeDeliveryDetails,
+                                /* userConfirmed */resp.UserConfirmed,
+                                /* userSub */resp.UserSub
+                              ]]);
+                }
+              }));
+}
+
+function changePassword(oldUserPassword, newUserPassword, param) {
+  var params = { };
+  params["PreviousPassword"] = oldUserPassword;
+  params["ProposedPassword"] = newUserPassword;
+  return Future.mapOk(Client.request(/* ChangePassword */-866061109, params), (function (resp) {
+                var err = resp.__type;
+                var msg = resp.message;
+                console.log("Raw Response", resp);
+                switch (err) {
+                  case "InvalidParameterException" : 
+                      return /* InvalidParameterException */Block.__(1, [msg]);
+                  case "UsernameExistsException" : 
+                      return /* UsernameExistsException */Block.__(2, [msg]);
+                  default:
+                    var cddDecoder = resp.CodeDeliveryDetails;
+                    var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
+                    var codeDeliveryDetails_001 = /* deliveryMedium */cddDecoder.DeliveryMedium;
+                    var codeDeliveryDetails_002 = /* destination */cddDecoder.Destination;
+                    var codeDeliveryDetails = /* record */[
+                      codeDeliveryDetails_000,
+                      codeDeliveryDetails_001,
+                      codeDeliveryDetails_002
+                    ];
+                    return /* Ok */Block.__(0, [/* record */[
+                                /* codeDeliveryDetails */codeDeliveryDetails,
+                                /* userConfirmed */resp.UserConfirmed,
+                                /* userSub */resp.UserSub
+                              ]]);
+                }
+              }));
+}
+
+function initiateAuth(username, password, param) {
+  var auth_bsd = {
+    USERNAME: username,
+    PASSWORD: password
+  };
+  var params_bsd = {
+    AuthFlow: "ADMIN_NO_SRP_AUTH",
+    AuthParameters: auth_bsd
+  };
+  var params = { };
+  var userNameObj = { };
+  userNameObj["USERNAME"] = username;
+  console.log("userNameObj", userNameObj);
+  params["AuthFlow"] = "CUSTOM_AUTH";
+  params["AuthParameters"] = userNameObj;
+  return Future.mapOk(Client.request(/* InitiateAuth */-23567743, params_bsd), (function (resp) {
                 var err = resp.__type;
                 var msg = resp.message;
                 console.log("Raw Response", resp);
@@ -49,4 +156,7 @@ function signUp(username, password, $staropt$star, $staropt$star$1, param) {
 }
 
 exports.signUp = signUp;
+exports.confirmSignUp = confirmSignUp;
+exports.changePassword = changePassword;
+exports.initiateAuth = initiateAuth;
 /* Client Not a pure module */

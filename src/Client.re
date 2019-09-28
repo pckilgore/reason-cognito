@@ -22,7 +22,7 @@ let makeNetworkError = err => {
   NetworkError(err);
 };
 
-let request = (operation, params: Js.Dict.t(Js.Json.t)) => {
+let request = (operation:Types.operation, params: Js.Dict.t(Js.Json.t)) => {
   let headers = Js.Dict.empty();
 
   Js.Dict.set(
@@ -36,7 +36,7 @@ let request = (operation, params: Js.Dict.t(Js.Json.t)) => {
   Js.Dict.set(
     headers,
     "X-Amz-Target",
-    "AWSCognitoIdentityProviderService." ++ operation,
+    "AWSCognitoIdentityProviderService." ++ operation->Types.operationToJs,
   );
 
   Fetch.fetchWithInit(
