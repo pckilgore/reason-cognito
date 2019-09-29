@@ -1,4 +1,4 @@
-// all operations found in `/amazon-cognito-identity-js/src/CognitoUser.js` except `SignUp` which is in `CognitoUserPool.js`;
+// all operations found in https://github.com/aws-amplify/amplify-js/blob/master/packages/amazon-cognito-identity-js/src/CognitoUserPool.js except `SignUp` which is in `CognitoUserPool.js`;
 [@bs.deriving jsConverter]
 type operation = [
   | [@bs.as "SignUp"] `SignUp
