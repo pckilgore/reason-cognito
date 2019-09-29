@@ -19,6 +19,7 @@ function makeNetworkError(err) {
 function request(operation, params) {
   var headers = { };
   params["ClientId"] = "3vjshpa4lgf92nfisjrg9os21a";
+  params["AuthFlow"] = "USER_PASSWORD_AUTH";
   headers["Content-Type"] = "application/x-amz-json-1.1";
   headers["X-Amz-User-Agent"] = "aws-amplify/0.1.x js";
   headers["X-Amz-Target"] = "AWSCognitoIdentityProviderService." + Types.operationToJs(operation);

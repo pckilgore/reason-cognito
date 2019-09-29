@@ -28,28 +28,60 @@ var emailAttribute = { };
 
 emailAttribute["Name"] = "email";
 
-emailAttribute["Value"] = "reasoncog@pck.email";
+emailAttribute["Value"] = "a.armand.inbox@gmail.com";
 
-Future.mapOk(Future.mapError(Cognito.initiateAuth("idkjs", "123Password#", /* () */0), (function (err) {
-            console.log(err);
-            return /* () */0;
-          })), (function (response) {
-        switch (response.tag | 0) {
-          case 0 : 
-              console.log("hey it worked", response[0]);
-              return /* () */0;
-          case 1 : 
-          case 2 : 
-              console.log("Errmsg: ", response[0]);
-              return /* () */0;
-          case 3 : 
-              console.log(response[0]);
-              return /* () */0;
-          
-        }
-      }));
+function ia(param) {
+  return Future.mapOk(Future.mapError(Cognito.signIn("idkjs", "123Password#", /* () */0), (function (err) {
+                    console.log(err);
+                    return /* () */0;
+                  })), (function (response) {
+                switch (response.tag | 0) {
+                  case 0 : 
+                      console.log("hey it worked", response[0]);
+                      return /* () */0;
+                  case 1 : 
+                  case 2 : 
+                      console.log("Errmsg: ", response[0]);
+                      return /* () */0;
+                  case 3 : 
+                      console.log(response[0]);
+                      return /* () */0;
+                  
+                }
+              }));
+}
+
+var authParameters = { };
+
+authParameters["USERNAME"] = "idkjs";
+
+function signIn(param) {
+  return Future.mapOk(Future.mapError(Cognito.signIn("idkjs", "123Password#", /* () */0), (function (err) {
+                    console.log(err);
+                    return /* () */0;
+                  })), (function (response) {
+                switch (response.tag | 0) {
+                  case 0 : 
+                      console.log("hey it worked", response[0]);
+                      return /* () */0;
+                  case 1 : 
+                  case 2 : 
+                      console.log("Errmsg: ", response[0]);
+                      return /* () */0;
+                  case 3 : 
+                      console.log(response[0]);
+                      return /* () */0;
+                  
+                }
+              }));
+}
+
+signIn(/* () */0);
 
 exports.response_typeToJs = response_typeToJs;
 exports.response_typeFromJs = response_typeFromJs;
 exports.emailAttribute = emailAttribute;
+exports.ia = ia;
+exports.authParameters = authParameters;
+exports.signIn = signIn;
 /*  Not a pure module */

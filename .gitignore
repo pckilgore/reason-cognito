@@ -27,3 +27,6 @@ lib/bs
 node_modules
 src/InitiatingAuth.re
 src/**/*.bs.js
+amazon-cognito-identity-js
+aws
+AwsTypes

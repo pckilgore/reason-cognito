@@ -7,10 +7,10 @@ type config = {
 };
 let emailAttribute = Js.Dict.empty();
 Js.Dict.set(emailAttribute, "Name", "email");
-Js.Dict.set(emailAttribute, "Value", "reasoncog@pck.email");
+Js.Dict.set(emailAttribute, "Value", "a.armand.inbox@gmail.com");
 
 // Cognito.signUp(
-//   ~username="idkjs",
+//   ~username="i.dkjs",
 //   ~password="123Password#",
 //   ~attributes=[|emailAttribute|],
 //   (),
@@ -24,7 +24,7 @@ Js.Dict.set(emailAttribute, "Value", "reasoncog@pck.email");
 //     | ReasonCognitoUnknownErrorException(msg) => Js.log(msg)
 //     }
 //   );
-// Cognito.confirmSignUp(~username="idkjs",~confirmationCode="872930", ())
+// Cognito.confirmSignUp(~username="i.dkjs",~confirmationCode="287973", ())
 // ->Future.mapError(err => Js.log(err))
 // ->Future.mapOk(response =>
 //     switch (response) {
@@ -49,13 +49,40 @@ Js.Dict.set(emailAttribute, "Value", "reasoncog@pck.email");
 //     | ReasonCognitoUnknownErrorException(msg) => Js.log(msg)
 //     }
 //   );
-Cognito.initiateAuth(~username="idkjs",~password="123Password#", ())
-->Future.mapError(err => Js.log(err))
-->Future.mapOk(response =>
-    switch (response) {
-    | Ok(resp) => Js.log2("hey it worked", resp)
-    | InvalidParameterException(msg)
-    | UsernameExistsException(msg) => Js.log2("Errmsg: ", msg)
-    | ReasonCognitoUnknownErrorException(msg) => Js.log(msg)
-    }
-  );
+let ia = () =>
+  Cognito.signIn(~username="idkjs", ~password="123Password#", ())
+  ->Future.mapError(err => Js.log(err))
+  ->Future.mapOk(response =>
+      switch (response) {
+      | Ok(resp) => Js.log2("hey it worked", resp)
+      | InvalidParameterException(msg)
+      | UsernameExistsException(msg) => Js.log2("Errmsg: ", msg)
+      | ReasonCognitoUnknownErrorException(msg) => Js.log(msg)
+      }
+    );
+// Cognito.confirmSignUp(~username="i.dkjs", ~confirmationCode="287973", ())
+// ->Future.mapError(err => Js.log(err))
+// ->Future.mapOk(response =>
+//     switch (response) {
+//     | Ok(resp) => Js.log2("hey it worked", resp)
+//     | InvalidParameterException(msg)
+//     | UsernameExistsException(msg) => Js.log2("Errmsg: ", msg)
+//     | ReasonCognitoUnknownErrorException(msg) => Js.log(msg)
+//     }
+//   );
+let authParameters = Js.Dict.empty();
+Js.Dict.set(authParameters, "USERNAME", "idkjs");
+
+let signIn = () =>
+  Cognito.signIn(~username="idkjs",~password="123Password#", ())
+  ->Future.mapError(err => Js.log(err))
+  ->Future.mapOk(response =>
+      switch (response) {
+      | Ok(resp) => Js.log2("hey it worked", resp)
+      | InvalidParameterException(msg)
+      | UsernameExistsException(msg) => Js.log2("Errmsg: ", msg)
+      | ReasonCognitoUnknownErrorException(msg) => Js.log(msg)
+      }
+    );
+
+signIn();

@@ -64,6 +64,10 @@ var jsMapperConstantArray$1 = /* array */[
     "USER_PASSWORD_AUTH"
   ],
   /* tuple */[
+    204375576,
+    "USER_PASSWORD_AUTH"
+  ],
+  /* tuple */[
     950373878,
     "CUSTOM_AUTH"
   ],
@@ -74,11 +78,11 @@ var jsMapperConstantArray$1 = /* array */[
 ];
 
 function authenticationFlowTypeToJs(param) {
-  return Js_mapperRt.binarySearch(6, param, jsMapperConstantArray$1);
+  return Js_mapperRt.binarySearch(7, param, jsMapperConstantArray$1);
 }
 
 function authenticationFlowTypeFromJs(param) {
-  return Js_mapperRt.revSearch(6, jsMapperConstantArray$1, param);
+  return Js_mapperRt.revSearch(7, jsMapperConstantArray$1, param);
 }
 
 exports.operationToJs = operationToJs;

@@ -30,6 +30,11 @@ let request = (operation:Types.operation, params: Js.Dict.t(Js.Json.t)) => {
     "ClientId",
     Js.Json.string("3vjshpa4lgf92nfisjrg9os21a"),
   );
+  Js.Dict.set(
+    params,
+    "AuthFlow",
+    Js.Json.string("USER_PASSWORD_AUTH"),
+  );
 
   Js.Dict.set(headers, "Content-Type", "application/x-amz-json-1.1");
   Js.Dict.set(headers, "X-Amz-User-Agent", "aws-amplify/0.1.x js");

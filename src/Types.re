@@ -19,4 +19,5 @@ type authenticationFlowType = [
   | [@bs.as "USER_PASSWORD_AUTH"] `USER_PASSWORD_AUTH
   | [@bs.as "REFRESH_TOKEN"] `REFRESH_TOKEN
   | [@bs.as "ADMIN_NO_SRP_AUTH"] `ADMIN_NO_SRP_AUTH
+  | [@bs.as "USER_PASSWORD_AUTH"] `USER_PASSWORD_AUTH
 ];

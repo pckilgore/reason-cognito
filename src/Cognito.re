@@ -4,20 +4,22 @@ type amznErrResponse = {
   message: string,
 };
 [@bs.deriving {abstract: light}]
-type auth_params_bsd = {
+type authenticationParameters = {
   [@bs.as "USERNAME"]
   username: string,
   [@bs.as "PASSWORD"]
   password: string,
 };
 
-[@bs.deriving {abstract: light}]
-type params_bsd = {
-  [@bs.as "AuthFlow"]
-  authFlow: string,
-  [@bs.as "AuthParameters"]
-  authParameters: auth_params_bsd,
-};
+  [@bs.deriving {abstract: light}]
+  type params_bsd = {
+    [@bs.as "AuthFlow"]
+    authFlow: string,
+    [@bs.as "SRP_A"]
+    srpa: Js.Json.t,
+    [@bs.as "AuthParameters"]
+    authParameters: authenticationParameters,
+  };
 [@bs.deriving abstract]
 type codeDeliveryDetailsDecoder = {
   [@bs.as "AttributeName"]
@@ -165,19 +167,22 @@ let changePassword = (~oldUserPassword: string, ~newUserPassword: string, ()) =>
 };
 external jsDict2Str: Js.Dict.t(string) => string = "%identity";
 external toJsDict: 'a => Js.Dict.t(Js.Json.t) = "%identity";
-let initiateAuth = (~username: string, ~password: string, ()) => {
-  let auth_bsd = auth_params_bsd(~username, ~password);
-  let params_bsd =
-    params_bsd(~authFlow="ADMIN_NO_SRP_AUTH", ~authParameters=auth_bsd);
+let signIn = (~username: string, ~password: string, ()) => {
+  let signInParams = authenticationParameters(~username, ~password)->toJsDict;
+/* create and object of this shape using our `authenticationParameters` type
+   ```json
+   {
+     AuthParameters : {
+       "USERNAME": "idkjs",
+       "PASSWORD": "somepassword",
+     }
+   }
+   ```
+   At this point we know we have a valid js object which can test with `Js.Json.test(signInParams, Object)`
+   Since we know its valid we will change its type to Js.Dict.t(Js.Json.t) which is expected by out params dict. We then use `Js.Dict.set(params, "AuthParameters", Js.Json.object_(signInParams));`to push it to the `AuthParameters` key expected by the cognito client.
+    */
   let params = Js.Dict.empty();
-  let userNameObj = Js.Dict.empty();
-  Js.Dict.set(userNameObj, "USERNAME", username);
-
-  Js.log2("userNameObj", userNameObj);
-  let username = userNameObj->jsDict2Str;
-  Js.Dict.set(params, "AuthFlow", Js.Json.string("CUSTOM_AUTH"));
-  Js.Dict.set(params, "AuthParameters", Js.Json.string(username));
-  let params = params_bsd->toJsDict;
+    Js.Dict.set(params, "AuthParameters", Js.Json.object_(signInParams));
   Client.request(`InitiateAuth, params)
   ->Future.mapOk(resp => {
       let isErrorResponse = makeResponse(resp);

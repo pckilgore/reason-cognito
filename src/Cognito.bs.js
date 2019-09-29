@@ -112,22 +112,14 @@ function changePassword(oldUserPassword, newUserPassword, param) {
               }));
 }
 
-function initiateAuth(username, password, param) {
-  var auth_bsd = {
+function signIn(username, password, param) {
+  var signInParams = {
     USERNAME: username,
     PASSWORD: password
   };
-  var params_bsd = {
-    AuthFlow: "ADMIN_NO_SRP_AUTH",
-    AuthParameters: auth_bsd
-  };
   var params = { };
-  var userNameObj = { };
-  userNameObj["USERNAME"] = username;
-  console.log("userNameObj", userNameObj);
-  params["AuthFlow"] = "CUSTOM_AUTH";
-  params["AuthParameters"] = userNameObj;
-  return Future.mapOk(Client.request(/* InitiateAuth */-23567743, params_bsd), (function (resp) {
+  params["AuthParameters"] = signInParams;
+  return Future.mapOk(Client.request(/* InitiateAuth */-23567743, params), (function (resp) {
                 var err = resp.__type;
                 var msg = resp.message;
                 console.log("Raw Response", resp);
@@ -158,5 +150,5 @@ function initiateAuth(username, password, param) {
 exports.signUp = signUp;
 exports.confirmSignUp = confirmSignUp;
 exports.changePassword = changePassword;
-exports.initiateAuth = initiateAuth;
+exports.signIn = signIn;
 /* Client Not a pure module */
