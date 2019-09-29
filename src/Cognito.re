@@ -11,15 +11,15 @@ type authenticationParameters = {
   password: string,
 };
 
-  [@bs.deriving {abstract: light}]
-  type params_bsd = {
-    [@bs.as "AuthFlow"]
-    authFlow: string,
-    [@bs.as "SRP_A"]
-    srpa: Js.Json.t,
-    [@bs.as "AuthParameters"]
-    authParameters: authenticationParameters,
-  };
+  // [@bs.deriving {abstract: light}]
+  // type params_bsd = {
+  //   [@bs.as "AuthFlow"]
+  //   authFlow: string,
+  //   [@bs.as "SRP_A"]
+  //   srpa: Js.Json.t,
+  //   [@bs.as "AuthParameters"]
+  //   authParameters: authenticationParameters,
+  // };
 [@bs.deriving abstract]
 type codeDeliveryDetailsDecoder = {
   [@bs.as "AttributeName"]
@@ -59,6 +59,7 @@ type amazonResponse('t) =
 
 external makeResponse: Js.Json.t => amznErrResponse = "%identity";
 external makeSignupResponse: 't => signUpResponseDecoder = "%identity";
+
 
 let signUp =
     (~username, ~password, ~attributes=[||], ~validationData=[||], ()) => {
@@ -165,24 +166,26 @@ let changePassword = (~oldUserPassword: string, ~newUserPassword: string, ()) =>
       };
     });
 };
-external jsDict2Str: Js.Dict.t(string) => string = "%identity";
+
+open SignInHelper;
+external makeSignInResponse: 't => signInResponseDecoder = "%identity";
 external toJsDict: 'a => Js.Dict.t(Js.Json.t) = "%identity";
 let signIn = (~username: string, ~password: string, ()) => {
   let signInParams = authenticationParameters(~username, ~password)->toJsDict;
-/* create and object of this shape using our `authenticationParameters` type
-   ```json
-   {
-     AuthParameters : {
-       "USERNAME": "idkjs",
-       "PASSWORD": "somepassword",
+  /* create and object of this shape using our `authenticationParameters` type
+     ```json
+     {
+       AuthParameters : {
+         "USERNAME": "idkjs",
+         "PASSWORD": "somepassword",
+       }
      }
-   }
-   ```
-   At this point we know we have a valid js object which can test with `Js.Json.test(signInParams, Object)`
-   Since we know its valid we will change its type to Js.Dict.t(Js.Json.t) which is expected by out params dict. We then use `Js.Dict.set(params, "AuthParameters", Js.Json.object_(signInParams));`to push it to the `AuthParameters` key expected by the cognito client.
-    */
+     ```
+     At this point we know we have a valid js object which can test with `Js.Json.test(signInParams, Object)`
+     Since we know its valid we will change its type to Js.Dict.t(Js.Json.t) which is expected by out params dict. We then use `Js.Dict.set(params, "AuthParameters", Js.Json.object_(signInParams));`to push it to the `AuthParameters` key expected by the cognito client.
+      */
   let params = Js.Dict.empty();
-    Js.Dict.set(params, "AuthParameters", Js.Json.object_(signInParams));
+  Js.Dict.set(params, "AuthParameters", Js.Json.object_(signInParams));
   Client.request(`InitiateAuth, params)
   ->Future.mapOk(resp => {
       let isErrorResponse = makeResponse(resp);
@@ -192,19 +195,19 @@ let signIn = (~username: string, ~password: string, ()) => {
 
       switch (err) {
       | "InvalidParameterException" => InvalidParameterException(msg)
-      | "UsernameExistsException" => UsernameExistsException(msg)
       | _ =>
-        let signUpResponse = makeSignupResponse(resp);
-        let cddDecoder = signUpResponse->codeDeliveryDetailsDecoderGet;
-        let codeDeliveryDetails = {
-          attributeName: cddDecoder->attributeNameGet,
-          deliveryMedium: cddDecoder->deliveryMediumGet,
-          destination: cddDecoder->destinationGet,
+        let signInResponse = makeSignInResponse(resp);
+        let authDecoder = signInResponse->authenticationResultDecoderGet;
+        let authenticationResult = {
+          accessToken: authDecoder->accessTokenGet,
+          idToken: authDecoder->idTokenGet,
+          refreshToken: authDecoder->refreshTokenGet,
+          tokenType: authDecoder->tokenTypeGet,
+          expiresIn: authDecoder->expiresInGet,
         };
         Ok({
-          codeDeliveryDetails,
-          userConfirmed: signUpResponse->userConfirmedGet,
-          userSub: signUpResponse->userSubGet,
+          authenticationResult,
+          challengeParameters: signInResponse->challengeParametersGet,
         });
       };
     });

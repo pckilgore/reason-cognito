@@ -123,26 +123,26 @@ function signIn(username, password, param) {
                 var err = resp.__type;
                 var msg = resp.message;
                 console.log("Raw Response", resp);
-                switch (err) {
-                  case "InvalidParameterException" : 
-                      return /* InvalidParameterException */Block.__(1, [msg]);
-                  case "UsernameExistsException" : 
-                      return /* UsernameExistsException */Block.__(2, [msg]);
-                  default:
-                    var cddDecoder = resp.CodeDeliveryDetails;
-                    var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
-                    var codeDeliveryDetails_001 = /* deliveryMedium */cddDecoder.DeliveryMedium;
-                    var codeDeliveryDetails_002 = /* destination */cddDecoder.Destination;
-                    var codeDeliveryDetails = /* record */[
-                      codeDeliveryDetails_000,
-                      codeDeliveryDetails_001,
-                      codeDeliveryDetails_002
-                    ];
-                    return /* Ok */Block.__(0, [/* record */[
-                                /* codeDeliveryDetails */codeDeliveryDetails,
-                                /* userConfirmed */resp.UserConfirmed,
-                                /* userSub */resp.UserSub
-                              ]]);
+                if (err === "InvalidParameterException") {
+                  return /* InvalidParameterException */Block.__(1, [msg]);
+                } else {
+                  var authDecoder = resp.AuthenticationResult;
+                  var authenticationResult_000 = /* accessToken */authDecoder.AccessToken;
+                  var authenticationResult_001 = /* expiresIn */authDecoder.ExpiresIn;
+                  var authenticationResult_002 = /* idToken */authDecoder.IdToken;
+                  var authenticationResult_003 = /* refreshToken */authDecoder.RefreshToken;
+                  var authenticationResult_004 = /* tokenType */authDecoder.TokenType;
+                  var authenticationResult = /* record */[
+                    authenticationResult_000,
+                    authenticationResult_001,
+                    authenticationResult_002,
+                    authenticationResult_003,
+                    authenticationResult_004
+                  ];
+                  return /* Ok */Block.__(0, [/* record */[
+                              /* authenticationResult */authenticationResult,
+                              /* challengeParameters */resp.ChallengeParameters
+                            ]]);
                 }
               }));
 }
