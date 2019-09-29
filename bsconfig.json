@@ -5,10 +5,6 @@
 		{
 			"dir": "src",
 			"subdirs": true
-		},
-		{
-			"dir": "aws",
-			"subdirs": true
 		}
 	],
 	"package-specs": {

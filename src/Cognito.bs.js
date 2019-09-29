@@ -113,12 +113,11 @@ function changePassword(oldUserPassword, newUserPassword, param) {
 }
 
 function signIn(username, password, param) {
-  var signInParams = {
-    USERNAME: username,
-    PASSWORD: password
-  };
+  var authParams = { };
+  authParams["USERNAME"] = username;
+  authParams["PASSWORD"] = password;
   var params = { };
-  params["AuthParameters"] = signInParams;
+  params["AuthParameters"] = authParams;
   return Future.mapOk(Client.request(/* InitiateAuth */-23567743, params), (function (resp) {
                 var err = resp.__type;
                 var msg = resp.message;

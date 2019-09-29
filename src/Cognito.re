@@ -3,23 +3,6 @@ type amznErrResponse = {
   __type: string,
   message: string,
 };
-[@bs.deriving {abstract: light}]
-type authenticationParameters = {
-  [@bs.as "USERNAME"]
-  username: string,
-  [@bs.as "PASSWORD"]
-  password: string,
-};
-
-  // [@bs.deriving {abstract: light}]
-  // type params_bsd = {
-  //   [@bs.as "AuthFlow"]
-  //   authFlow: string,
-  //   [@bs.as "SRP_A"]
-  //   srpa: Js.Json.t,
-  //   [@bs.as "AuthParameters"]
-  //   authParameters: authenticationParameters,
-  // };
 [@bs.deriving abstract]
 type codeDeliveryDetailsDecoder = {
   [@bs.as "AttributeName"]
@@ -171,21 +154,13 @@ open SignInHelper;
 external makeSignInResponse: 't => signInResponseDecoder = "%identity";
 external toJsDict: 'a => Js.Dict.t(Js.Json.t) = "%identity";
 let signIn = (~username: string, ~password: string, ()) => {
-  let signInParams = authenticationParameters(~username, ~password)->toJsDict;
-  /* create and object of this shape using our `authenticationParameters` type
-     ```json
-     {
-       AuthParameters : {
-         "USERNAME": "idkjs",
-         "PASSWORD": "somepassword",
-       }
-     }
-     ```
-     At this point we know we have a valid js object which can test with `Js.Json.test(signInParams, Object)`
-     Since we know its valid we will change its type to Js.Dict.t(Js.Json.t) which is expected by out params dict. We then use `Js.Dict.set(params, "AuthParameters", Js.Json.object_(signInParams));`to push it to the `AuthParameters` key expected by the cognito client.
-      */
+
+  let authParams = Js.Dict.empty();
+  Js.Dict.set(authParams, "USERNAME", Js.Json.string(username));
+  Js.Dict.set(authParams, "PASSWORD", Js.Json.string(password));
+
   let params = Js.Dict.empty();
-  Js.Dict.set(params, "AuthParameters", Js.Json.object_(signInParams));
+  Js.Dict.set(params, "AuthParameters", Js.Json.object_(authParams));
   Client.request(`InitiateAuth, params)
   ->Future.mapOk(resp => {
       let isErrorResponse = makeResponse(resp);
