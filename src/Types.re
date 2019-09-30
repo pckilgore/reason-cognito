@@ -7,6 +7,7 @@ type authenticationFlowType =
 type operation =
   | SignUp
   | SignIn
+  | SignOut
   | ConfirmSignUp
   | ChangePassword
   | RespondToAuthChallenge
@@ -18,6 +19,7 @@ let makeOperationString =
   fun
   | SignUp => "SignUp"
   | SignIn => "SignIn"
+  | SignOut => "SignOut"
   | ConfirmSignUp => "ConfirmSignUp"
   | ChangePassword => "ChangePassword"
   | RespondToAuthChallenge => "RespondToAuthChallenge"

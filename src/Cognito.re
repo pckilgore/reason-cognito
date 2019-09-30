@@ -361,3 +361,83 @@ let changePassword =
       };
     });
 };
+let signOut =
+    (config, ()) => {
+  let params = Js.Dict.empty();
+
+  Client.request(config, SignOut, params)
+  ->Future.flatMapOk(res => {
+
+      Js.log2("Raw Response", res);
+
+      switch (res.status) {
+      | Success(_) =>
+        // We're _really_ hoping amazon holds to their API contract here.
+        // If not, we're going to see null type errors.
+        Future.make(resolve =>
+          resolve(
+            Belt.Result.Ok(
+              {
+                res;
+              },
+            ),
+          )
+        )
+      | Informational(_)
+      | Redirect(_)
+      | ClientError(_)
+      | ServerError(_) =>
+        // We're _really_ hoping amazon holds to their API contract here too.
+        // Although the unknownerror variant helps lots.
+        let isErrorResponse = makeResponse(res.json);
+        let err = isErrorResponse->__typeGet;
+        let msg = isErrorResponse->messageGet;
+        let err =
+          switch (err) {
+          | "CodeMismatchException" => `CognitoConfirmationCodeValidation(msg)
+          | _ => `CognitoUnknownError(msg)
+          };
+        Future.make(resolve => resolve(Belt.Result.Error(err)));
+      };
+    });
+};
+let deleteUser =
+    (config, ()) => {
+  let params = Js.Dict.empty();
+
+  Client.request(config, InitiateAuth, params)
+  ->Future.flatMapOk(res => {
+
+      Js.log2("Raw Response", res);
+
+      switch (res.status) {
+      | Success(_) =>
+        // We're _really_ hoping amazon holds to their API contract here.
+        // If not, we're going to see null type errors.
+        Future.make(resolve =>
+          resolve(
+            Belt.Result.Ok(
+              {
+                res;
+              },
+            ),
+          )
+        )
+      | Informational(_)
+      | Redirect(_)
+      | ClientError(_)
+      | ServerError(_) =>
+        // We're _really_ hoping amazon holds to their API contract here too.
+        // Although the unknownerror variant helps lots.
+        let isErrorResponse = makeResponse(res.json);
+        let err = isErrorResponse->__typeGet;
+        let msg = isErrorResponse->messageGet;
+        let err =
+          switch (err) {
+          | "CodeMismatchException" => `CognitoConfirmationCodeValidation(msg)
+          | _ => `CognitoUnknownError(msg)
+          };
+        Future.make(resolve => resolve(Belt.Result.Error(err)));
+      };
+    });
+};
