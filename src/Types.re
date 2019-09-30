@@ -1,23 +1,98 @@
-// all operations found in https://github.com/aws-amplify/amplify-js/blob/master/packages/amazon-cognito-identity-js/src/CognitoUserPool.js except `SignUp` which is in `CognitoUserPool.js`;
-[@bs.deriving jsConverter]
-type operation = [
-  | [@bs.as "SignUp"] `SignUp
-  | [@bs.as "SignIn"] `SignIn
-  | [@bs.as "ConfirmSignUp"] `ConfirmSignUp
-  | [@bs.as "ChangePassword"] `ChangePassword
-  | [@bs.as "RespondToAuthChallenge"] `RespondToAuthChallenge
-  | [@bs.as "ForgotPassword"] `ForgotPassword
-  | [@bs.as "ConfirmForgotPassword"] `ConfirmForgotPassword
-  | [@bs.as "InitiateAuth"] `InitiateAuth
-];
 /* https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html#API_InitiateAuth_RequestSyntax */
-[@bs.deriving jsConverter]
-type authenticationFlowType = [
-  | [@bs.as "USER_SRP_AUTH"] `USER_SRP_AUTH
-  | [@bs.as "CUSTOM_AUTH"] `CUSTOM_AUTH
-  | [@bs.as "REFRESH_TOKEN_AUTH"] `REFRESH_TOKEN_AUTH
-  | [@bs.as "USER_PASSWORD_AUTH"] `USER_PASSWORD_AUTH
-  | [@bs.as "REFRESH_TOKEN"] `REFRESH_TOKEN
-  | [@bs.as "ADMIN_NO_SRP_AUTH"] `ADMIN_NO_SRP_AUTH
-  | [@bs.as "USER_PASSWORD_AUTH"] `USER_PASSWORD_AUTH
-];
+type authenticationFlowType =
+  | USER_PASSWORD_AUTH
+  | USER_SRP_AUTH
+  | CUSTOM_AUTH;
+/* all operations found in https://github.com/aws-amplify/amplify-js/blob/master/packages/amazon-cognito-identity-js/src/CognitoUserPool.js except `SignUp` which is in `CognitoUserPool.js`*/
+type operation =
+  | SignUp
+  | SignIn
+  | ConfirmSignUp
+  | ChangePassword
+  | RespondToAuthChallenge
+  | ForgotPassword
+  | ConfirmForgotPassword
+  | InitiateAuth;
+
+let makeOperationString =
+  fun
+  | SignUp => "SignUp"
+  | SignIn => "SignIn"
+  | ConfirmSignUp => "ConfirmSignUp"
+  | ChangePassword => "ChangePassword"
+  | RespondToAuthChallenge => "RespondToAuthChallenge"
+  | ForgotPassword => "ForgotPassword"
+  | ConfirmForgotPassword => "ConfirmForgotPassword"
+  | InitiateAuth => "InitiateAuth";
+
+type supportedRegions =
+  | UsEast1
+  | UsEast2
+  | UsWest2
+  | ApSouth1
+  | ApNortheast1
+  | ApNortheast2
+  | ApSoutheast1
+  | ApSoutheast2
+  | CaCentral1
+  | EuCentral1
+  | EuWest1
+  | EuWest2;
+
+let makeRegionString =
+  fun
+  | UsEast1 => "us-east-1"
+  | UsEast2 => "us-east-2"
+  | UsWest2 => "us-west-2"
+  | ApSouth1 => "ap-south-1"
+  | ApNortheast1 => "ap-northeast-2"
+  | ApNortheast2 => "ap-northeast-2"
+  | ApSoutheast1 => "ap-southeast-1"
+  | ApSoutheast2 => "ap-southeast-2"
+  | CaCentral1 => "ca-central-1"
+  | EuCentral1 => "eu-central-1"
+  | EuWest1 => "eu-west-1"
+  | EuWest2 => "eu-west-2";
+
+[@bs.deriving abstract]
+type codeDeliveryDetailsDecoder = {
+  [@bs.as "AttributeName"]
+  attributeName: string,
+  [@bs.as "DeliveryMedium"]
+  deliveryMedium: string,
+  [@bs.as "Destination"]
+  destination: string,
+};
+
+[@bs.deriving abstract]
+type signUpResponseDecoder = {
+  [@bs.as "CodeDeliveryDetails"]
+  codeDeliveryDetailsDecoder,
+  [@bs.as "UserConfirmed"]
+  userConfirmed: bool,
+  [@bs.as "UserSub"]
+  userSub: string,
+};
+
+type signUpResponse = {
+  codeDeliveryDetails,
+  userConfirmed: bool,
+  userSub: string,
+}
+and codeDeliveryDetails = {
+  attributeName: string,
+  deliveryMedium,
+  destination: string,
+}
+and deliveryMedium =
+  | Email
+  | SMS;
+
+[@bs.deriving abstract]
+type amznErrResponse = {
+  __type: string,
+  message: string,
+};
+
+external makeSignupResponse: 't => signUpResponseDecoder = "%identity";
+external makeResponse: Js.Json.t => amznErrResponse = "%identity";

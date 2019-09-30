@@ -3,129 +3,249 @@
 
 var $$Array = require("bs-platform/lib/js/array.js");
 var Block = require("bs-platform/lib/js/block.js");
-var Client = require("./Client.bs.js");
+var Curry = require("bs-platform/lib/js/curry.js");
+var Fetch = require("bs-fetch/src/Fetch.js");
+var Types = require("./Types.bs.js");
 var Future = require("reason-future/src/Future.bs.js");
 var Js_dict = require("bs-platform/lib/js/js_dict.js");
+var FutureJs = require("reason-future/src/FutureJs.bs.js");
+var Caml_option = require("bs-platform/lib/js/caml_option.js");
 
-function signUp(username, password, $staropt$star, $staropt$star$1, param) {
+((require('isomorphic-fetch')));
+
+function makeConfig(poolId, clientId, region, $staropt$star, param) {
+  var authenticationFlowType = $staropt$star !== undefined ? $staropt$star : /* USER_SRP_AUTH */1;
+  return /* record */[
+          /* poolId */poolId,
+          /* clientId */clientId,
+          /* endpoint */"https://cognito-idp." + (Types.makeRegionString(region) + ".amazonaws.com/"),
+          /* authenticationFlowType */authenticationFlowType
+        ];
+}
+
+function request(config, operation, params) {
+  var headers = { };
+  var target = "AWSCognitoIdentityProviderService." + Types.makeOperationString(operation);
+  headers["X-Amz-Target"] = target;
+  headers["Content-Type"] = "application/x-amz-json-1.1";
+  headers["X-Amz-User-Agent"] = "reason-cognito/0.1.x js";
+  params["ClientId"] = config[/* clientId */1];
+  return Future.flatMapOk(FutureJs.fromPromise(fetch(config[/* endpoint */2], Fetch.RequestInit[/* make */0](/* Post */2, Caml_option.some(headers), Caml_option.some(JSON.stringify(params)), undefined, undefined, /* NoCORS */2, undefined, /* NoCache */3, undefined, undefined, undefined)(/* () */0)), (function (fetchError) {
+                    return /* `CognitoClientError */[
+                            -332319508,
+                            fetchError
+                          ];
+                  })), (function (apiResponse) {
+                return Future.flatMapOk(FutureJs.fromPromise(apiResponse.json(), (function (err) {
+                                  return /* `CognitoJsonParseError */[
+                                          -159238450,
+                                          err
+                                        ];
+                                })), (function (json) {
+                              var code = apiResponse.status;
+                              var status = code < 200 ? /* Informational */Block.__(0, [code]) : (
+                                  code >= 200 && code < 300 ? /* Success */Block.__(1, [code]) : (
+                                      code >= 300 && code < 400 ? /* Redirect */Block.__(2, [code]) : (
+                                          code >= 400 && code < 500 ? /* ClientError */Block.__(3, [code]) : /* ServerError */Block.__(4, [code])
+                                        )
+                                    )
+                                );
+                              return Future.make((function (resolve) {
+                                            return Curry._1(resolve, /* Ok */Block.__(0, [/* record */[
+                                                            /* status */status,
+                                                            /* json */json
+                                                          ]]));
+                                          }));
+                            }));
+              }));
+}
+
+var Client = /* module */[/* request */request];
+
+function jsonMapString(arr) {
+  return $$Array.map((function (item) {
+                return Js_dict.map((function (value) {
+                              return value;
+                            }), item);
+              }), arr);
+}
+
+function signUp(config, username, password, $staropt$star, $staropt$star$1, param) {
   var attributes = $staropt$star !== undefined ? $staropt$star : /* array */[];
   var validationData = $staropt$star$1 !== undefined ? $staropt$star$1 : /* array */[];
-  var params = { };
-  var jsonAttribs = $$Array.map((function (attrib) {
-          return Js_dict.map((function (av) {
-                        return av;
-                      }), attrib);
-        }), attributes);
-  params["Username"] = username;
-  params["Password"] = password;
-  params["UserAttributes"] = jsonAttribs;
-  params["ValidationData"] = validationData;
-  return Future.mapOk(Client.request(/* SignUp */-384133096, params), (function (resp) {
-                var err = resp.__type;
-                var msg = resp.message;
-                console.log("Raw Response", resp);
-                switch (err) {
-                  case "InvalidParameterException" : 
-                      return /* InvalidParameterException */Block.__(1, [msg]);
-                  case "UsernameExistsException" : 
-                      return /* UsernameExistsException */Block.__(2, [msg]);
-                  default:
-                    var cddDecoder = resp.CodeDeliveryDetails;
-                    var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
-                    var codeDeliveryDetails_001 = /* deliveryMedium */cddDecoder.DeliveryMedium;
-                    var codeDeliveryDetails_002 = /* destination */cddDecoder.Destination;
-                    var codeDeliveryDetails = /* record */[
-                      codeDeliveryDetails_000,
-                      codeDeliveryDetails_001,
-                      codeDeliveryDetails_002
-                    ];
-                    return /* Ok */Block.__(0, [/* record */[
-                                /* codeDeliveryDetails */codeDeliveryDetails,
-                                /* userConfirmed */resp.UserConfirmed,
-                                /* userSub */resp.UserSub
-                              ]]);
+  var jsonAttribs = jsonMapString(attributes);
+  var jsonVData = jsonMapString(validationData);
+  var payload = { };
+  payload["Username"] = username;
+  payload["Password"] = password;
+  payload["UserAttributes"] = jsonAttribs;
+  payload["ValidationData"] = jsonVData;
+  return Future.flatMapOk(request(config, /* SignUp */0, payload), (function (res) {
+                console.log("Raw Response", res);
+                var match = res[/* status */0];
+                if (match.tag === 1) {
+                  console.log("Raw Response", res);
+                  var cddDecoder = res.CodeDeliveryDetails;
+                  var match$1 = cddDecoder.DeliveryMedium === "EMAIL";
+                  var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
+                  var codeDeliveryDetails_001 = /* deliveryMedium */match$1 ? /* Email */0 : /* SMS */1;
+                  var codeDeliveryDetails_002 = /* destination */cddDecoder.Destination;
+                  var codeDeliveryDetails = /* record */[
+                    codeDeliveryDetails_000,
+                    codeDeliveryDetails_001,
+                    codeDeliveryDetails_002
+                  ];
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Ok */Block.__(0, [/* record */[
+                                                /* codeDeliveryDetails */codeDeliveryDetails,
+                                                /* userConfirmed */res.UserConfirmed,
+                                                /* userSub */res.UserSub
+                                              ]]));
+                              }));
+                } else {
+                  var isErrorResponse = res[/* json */1];
+                  var err = isErrorResponse.__type;
+                  var msg = isErrorResponse.message;
+                  var err$1;
+                  switch (err) {
+                    case "CodeDeliveryFailureException" : 
+                        err$1 = /* `CognitoCodeDeliveryFailure */[
+                          307717752,
+                          msg
+                        ];
+                        break;
+                    case "InternalErrorException" : 
+                        err$1 = /* `CognitoInternalError */[
+                          636052602,
+                          msg
+                        ];
+                        break;
+                    case "InvalidEmailRoleAccessPolicyException" : 
+                        err$1 = /* `CognitoInvalidEmailRoleAccessPolicy */[
+                          -320011326,
+                          msg
+                        ];
+                        break;
+                    case "InvalidLambdaResponseException" : 
+                        err$1 = /* `CognitoInvalidLambdaResponse */[
+                          -1072578002,
+                          msg
+                        ];
+                        break;
+                    case "InvalidParameterException" : 
+                        err$1 = /* `CognitoInvalidParameter */[
+                          -267133469,
+                          msg
+                        ];
+                        break;
+                    case "InvalidPasswordException" : 
+                        err$1 = /* `CognitoInvalidPassword */[
+                          -17702879,
+                          msg
+                        ];
+                        break;
+                    case "InvalidSmsRoleAccessPolicysException" : 
+                        err$1 = /* `CognitoInvalidSmsRoleAccessPolicys */[
+                          598714580,
+                          msg
+                        ];
+                        break;
+                    case "InvalidSmsRoleTrustRelationshipException" : 
+                        err$1 = /* `CognitoInvalidSmsRoleTrustRelationship */[
+                          -198400121,
+                          msg
+                        ];
+                        break;
+                    case "NotAuthorizedException" : 
+                        err$1 = /* `CognitoNotAuthorized */[
+                          -1019683139,
+                          msg
+                        ];
+                        break;
+                    case "ResourceNotFoundException" : 
+                        err$1 = /* `CognitoResourceNotFound */[
+                          281060686,
+                          msg
+                        ];
+                        break;
+                    case "TooManyRequestsException" : 
+                        err$1 = /* `CognitoTooManyRequests */[
+                          165203366,
+                          msg
+                        ];
+                        break;
+                    case "UnexpectedLambdaException" : 
+                        err$1 = /* `CognitoUnexpectedLambda */[
+                          -539579927,
+                          msg
+                        ];
+                        break;
+                    case "UserLambdaValidationException" : 
+                        err$1 = /* `CognitoUserLambdaValidation */[
+                          1019055420,
+                          msg
+                        ];
+                        break;
+                    case "UsernameExistsException" : 
+                        err$1 = /* `CognitoUsernameExists */[
+                          -157849469,
+                          msg
+                        ];
+                        break;
+                    default:
+                      err$1 = /* `CognitoUnknownError */[
+                        -55570033,
+                        msg
+                      ];
+                  }
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Error */Block.__(1, [err$1]));
+                              }));
                 }
               }));
 }
 
-function confirmSignUp(username, confirmationCode, param) {
+function confirmSignUp(config, username, confirmationCode, param) {
   var params = { };
   params["Username"] = username;
   params["ConfirmationCode"] = confirmationCode;
-  return Future.mapOk(Client.request(/* ConfirmSignUp */-606583560, params), (function (resp) {
-                var err = resp.__type;
-                var msg = resp.message;
-                console.log("Raw Response", resp);
-                switch (err) {
-                  case "InvalidParameterException" : 
-                      return /* InvalidParameterException */Block.__(1, [msg]);
-                  case "UsernameExistsException" : 
-                      return /* UsernameExistsException */Block.__(2, [msg]);
-                  default:
-                    var cddDecoder = resp.CodeDeliveryDetails;
-                    var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
-                    var codeDeliveryDetails_001 = /* deliveryMedium */cddDecoder.DeliveryMedium;
-                    var codeDeliveryDetails_002 = /* destination */cddDecoder.Destination;
-                    var codeDeliveryDetails = /* record */[
-                      codeDeliveryDetails_000,
-                      codeDeliveryDetails_001,
-                      codeDeliveryDetails_002
+  return Future.flatMapOk(request(config, /* ConfirmSignUp */2, params), (function (res) {
+                console.log("Raw Response", res);
+                var match = res[/* status */0];
+                if (match.tag === 1) {
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Ok */Block.__(0, [res]));
+                              }));
+                } else {
+                  var isErrorResponse = res[/* json */1];
+                  var err = isErrorResponse.__type;
+                  var msg = isErrorResponse.message;
+                  var err$1 = err === "CodeMismatchException" ? /* `CognitoConfirmationCodeValidation */[
+                      398244300,
+                      msg
+                    ] : /* `CognitoUnknownError */[
+                      -55570033,
+                      msg
                     ];
-                    return /* Ok */Block.__(0, [/* record */[
-                                /* codeDeliveryDetails */codeDeliveryDetails,
-                                /* userConfirmed */resp.UserConfirmed,
-                                /* userSub */resp.UserSub
-                              ]]);
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Error */Block.__(1, [err$1]));
+                              }));
                 }
               }));
 }
 
-function changePassword(oldUserPassword, newUserPassword, param) {
-  var params = { };
-  params["PreviousPassword"] = oldUserPassword;
-  params["ProposedPassword"] = newUserPassword;
-  return Future.mapOk(Client.request(/* ChangePassword */-866061109, params), (function (resp) {
-                var err = resp.__type;
-                var msg = resp.message;
-                console.log("Raw Response", resp);
-                switch (err) {
-                  case "InvalidParameterException" : 
-                      return /* InvalidParameterException */Block.__(1, [msg]);
-                  case "UsernameExistsException" : 
-                      return /* UsernameExistsException */Block.__(2, [msg]);
-                  default:
-                    var cddDecoder = resp.CodeDeliveryDetails;
-                    var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
-                    var codeDeliveryDetails_001 = /* deliveryMedium */cddDecoder.DeliveryMedium;
-                    var codeDeliveryDetails_002 = /* destination */cddDecoder.Destination;
-                    var codeDeliveryDetails = /* record */[
-                      codeDeliveryDetails_000,
-                      codeDeliveryDetails_001,
-                      codeDeliveryDetails_002
-                    ];
-                    return /* Ok */Block.__(0, [/* record */[
-                                /* codeDeliveryDetails */codeDeliveryDetails,
-                                /* userConfirmed */resp.UserConfirmed,
-                                /* userSub */resp.UserSub
-                              ]]);
-                }
-              }));
-}
-
-function signIn(username, password, param) {
+function signIn(config, username, password, param) {
   var authParams = { };
   authParams["USERNAME"] = username;
   authParams["PASSWORD"] = password;
   var params = { };
   params["AuthParameters"] = authParams;
-  return Future.mapOk(Client.request(/* InitiateAuth */-23567743, params), (function (resp) {
-                var err = resp.__type;
-                var msg = resp.message;
-                console.log("Raw Response", resp);
-                if (err === "InvalidParameterException") {
-                  return /* InvalidParameterException */Block.__(1, [msg]);
-                } else {
-                  var authDecoder = resp.AuthenticationResult;
+  params["AuthFlow"] = "USER_PASSWORD_AUTH";
+  return Future.flatMapOk(request(config, /* InitiateAuth */7, params), (function (res) {
+                console.log("Raw Response", res);
+                var match = res[/* status */0];
+                if (match.tag === 1) {
+                  var authDecoder = res.AuthenticationResult;
                   var authenticationResult_000 = /* accessToken */authDecoder.AccessToken;
                   var authenticationResult_001 = /* expiresIn */authDecoder.ExpiresIn;
                   var authenticationResult_002 = /* idToken */authDecoder.IdToken;
@@ -138,16 +258,79 @@ function signIn(username, password, param) {
                     authenticationResult_003,
                     authenticationResult_004
                   ];
-                  return /* Ok */Block.__(0, [/* record */[
-                              /* authenticationResult */authenticationResult,
-                              /* challengeParameters */resp.ChallengeParameters
-                            ]]);
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Ok */Block.__(0, [/* record */[
+                                                /* authenticationResult */authenticationResult,
+                                                /* challengeParameters */res.ChallengeParameters
+                                              ]]));
+                              }));
+                } else {
+                  var isErrorResponse = res[/* json */1];
+                  var err = isErrorResponse.__type;
+                  var msg = isErrorResponse.message;
+                  var err$1;
+                  switch (err) {
+                    case "InvalidParameterException" : 
+                        err$1 = /* `CognitoInvalidParameter */[
+                          -267133469,
+                          msg
+                        ];
+                        break;
+                    case "NotAuthorizedException" : 
+                        err$1 = /* `CognitoNotAuthorized */[
+                          -1019683139,
+                          msg
+                        ];
+                        break;
+                    default:
+                      err$1 = /* `CognitoUnknownError */[
+                        -55570033,
+                        msg
+                      ];
+                  }
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Error */Block.__(1, [err$1]));
+                              }));
                 }
               }));
 }
 
+function changePassword(config, username, oldPassword, newPassword, accessToken, param) {
+  var params = { };
+  params["AccessToken"] = accessToken;
+  params["PreviousPassword"] = oldPassword;
+  params["USERNAME"] = username;
+  params["ProposedPassword"] = newPassword;
+  return Future.flatMapOk(request(config, /* ChangePassword */3, params), (function (res) {
+                console.log("Raw Response", res);
+                var match = res[/* status */0];
+                if (match.tag === 1) {
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Ok */Block.__(0, [res]));
+                              }));
+                } else {
+                  var isErrorResponse = res[/* json */1];
+                  var err = isErrorResponse.__type;
+                  var msg = isErrorResponse.message;
+                  var err$1 = err === "CodeMismatchException" ? /* `CognitoConfirmationCodeValidation */[
+                      398244300,
+                      msg
+                    ] : /* `CognitoUnknownError */[
+                      -55570033,
+                      msg
+                    ];
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Error */Block.__(1, [err$1]));
+                              }));
+                }
+              }));
+}
+
+exports.makeConfig = makeConfig;
+exports.Client = Client;
+exports.jsonMapString = jsonMapString;
 exports.signUp = signUp;
 exports.confirmSignUp = confirmSignUp;
-exports.changePassword = changePassword;
 exports.signIn = signIn;
-/* Client Not a pure module */
+exports.changePassword = changePassword;
+/*  Not a pure module */
