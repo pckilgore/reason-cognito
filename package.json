@@ -5,7 +5,7 @@
     "clean": "bsb -clean-world",
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
-    "test": "node src/scratch.bs.js"
+    "test": "node src/Scratch.bs.js"
   },
   "keywords": [
     "BuckleScript"
