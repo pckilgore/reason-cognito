@@ -293,95 +293,10 @@ function initiateAuth(config, username, password, param) {
               }));
 }
 
-function changePassword(config, username, oldPassword, newPassword, accessToken, param) {
-  var params = { };
-  params["AccessToken"] = accessToken;
-  params["PreviousPassword"] = oldPassword;
-  params["USERNAME"] = username;
-  params["ProposedPassword"] = newPassword;
-  return Future.flatMapOk(request(config, /* ChangePassword */4, params), (function (res) {
-                var match = res[/* status */0];
-                if (match.tag === /* Success */1) {
-                  return Future.make((function (resolve) {
-                                return Curry._1(resolve, /* Ok */Block.__(0, [res]));
-                              }));
-                } else {
-                  var isErrorResponse = res[/* json */1];
-                  var err = isErrorResponse.__type;
-                  var msg = isErrorResponse.message;
-                  var err$1 = err === "CodeMismatchException" ? /* `CognitoConfirmationCodeValidation */[
-                      398244300,
-                      msg
-                    ] : /* `CognitoUnknownError */[
-                      -55570033,
-                      msg
-                    ];
-                  return Future.make((function (resolve) {
-                                return Curry._1(resolve, /* Error */Block.__(1, [err$1]));
-                              }));
-                }
-              }));
-}
-
-function signOut(config, param) {
-  var params = { };
-  return Future.flatMapOk(request(config, /* SignOut */2, params), (function (res) {
-                var match = res[/* status */0];
-                if (match.tag === /* Success */1) {
-                  return Future.make((function (resolve) {
-                                return Curry._1(resolve, /* Ok */Block.__(0, [res]));
-                              }));
-                } else {
-                  var isErrorResponse = res[/* json */1];
-                  var err = isErrorResponse.__type;
-                  var msg = isErrorResponse.message;
-                  var err$1 = err === "CodeMismatchException" ? /* `CognitoConfirmationCodeValidation */[
-                      398244300,
-                      msg
-                    ] : /* `CognitoUnknownError */[
-                      -55570033,
-                      msg
-                    ];
-                  return Future.make((function (resolve) {
-                                return Curry._1(resolve, /* Error */Block.__(1, [err$1]));
-                              }));
-                }
-              }));
-}
-
-function deleteUser(config, param) {
-  var params = { };
-  return Future.flatMapOk(request(config, /* InitiateAuth */8, params), (function (res) {
-                var match = res[/* status */0];
-                if (match.tag === /* Success */1) {
-                  return Future.make((function (resolve) {
-                                return Curry._1(resolve, /* Ok */Block.__(0, [res]));
-                              }));
-                } else {
-                  var isErrorResponse = res[/* json */1];
-                  var err = isErrorResponse.__type;
-                  var msg = isErrorResponse.message;
-                  var err$1 = err === "CodeMismatchException" ? /* `CognitoConfirmationCodeValidation */[
-                      398244300,
-                      msg
-                    ] : /* `CognitoUnknownError */[
-                      -55570033,
-                      msg
-                    ];
-                  return Future.make((function (resolve) {
-                                return Curry._1(resolve, /* Error */Block.__(1, [err$1]));
-                              }));
-                }
-              }));
-}
-
 exports.makeConfig = makeConfig;
 exports.Client = Client;
 exports.jsonMapString = jsonMapString;
 exports.signUp = signUp;
 exports.confirmSignUp = confirmSignUp;
 exports.initiateAuth = initiateAuth;
-exports.changePassword = changePassword;
-exports.signOut = signOut;
-exports.deleteUser = deleteUser;
 /*  Not a pure module */
