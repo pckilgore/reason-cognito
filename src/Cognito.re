@@ -240,7 +240,7 @@ let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
         let msg = isErrorResponse->messageGet;
         let err =
           switch (err) {
-          | "CodeMismatchException" => `CognitoConfirmationCodeValidation(msg)
+          | "CodeMismatchException" => `CognitoCodeMismatch(msg)
           | _ => `CognitoUnknownError(msg)
           };
         Future.make(resolve => resolve(Belt.Result.Error(err)));
