@@ -83,10 +83,8 @@ function signUp(config, username, password, $staropt$star, $staropt$star$1, para
   payload["UserAttributes"] = jsonAttribs;
   payload["ValidationData"] = jsonVData;
   return Future.flatMapOk(request(config, /* SignUp */0, payload), (function (res) {
-                console.log("Raw Response", res);
                 var match = res[/* status */0];
                 if (match.tag === /* Success */1) {
-                  console.log("Raw Response", res);
                   var cddDecoder = res.CodeDeliveryDetails;
                   var match$1 = cddDecoder.DeliveryMedium === "EMAIL";
                   var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
@@ -243,7 +241,6 @@ function initiateAuth(config, username, password, param) {
   params["AuthParameters"] = authParams;
   params["AuthFlow"] = "USER_PASSWORD_AUTH";
   return Future.flatMapOk(request(config, /* InitiateAuth */8, params), (function (res) {
-                console.log("Raw Response", res);
                 var match = res[/* status */0];
                 if (match.tag === /* Success */1) {
                   var authDecoder = res.AuthenticationResult;
@@ -303,7 +300,6 @@ function changePassword(config, username, oldPassword, newPassword, accessToken,
   params["USERNAME"] = username;
   params["ProposedPassword"] = newPassword;
   return Future.flatMapOk(request(config, /* ChangePassword */4, params), (function (res) {
-                console.log("Raw Response", res);
                 var match = res[/* status */0];
                 if (match.tag === /* Success */1) {
                   return Future.make((function (resolve) {
@@ -330,7 +326,6 @@ function changePassword(config, username, oldPassword, newPassword, accessToken,
 function signOut(config, param) {
   var params = { };
   return Future.flatMapOk(request(config, /* SignOut */2, params), (function (res) {
-                console.log("Raw Response", res);
                 var match = res[/* status */0];
                 if (match.tag === /* Success */1) {
                   return Future.make((function (resolve) {
@@ -357,7 +352,6 @@ function signOut(config, param) {
 function deleteUser(config, param) {
   var params = { };
   return Future.flatMapOk(request(config, /* InitiateAuth */8, params), (function (res) {
-                console.log("Raw Response", res);
                 var match = res[/* status */0];
                 if (match.tag === /* Success */1) {
                   return Future.make((function (resolve) {

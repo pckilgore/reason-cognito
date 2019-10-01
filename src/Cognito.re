@@ -149,13 +149,13 @@ let signUp =
 
   Client.request(config, SignUp, payload)
   ->Future.flatMapOk(res => {
-      Js.log2("Raw Response", res);
+
 
       switch (res.status) {
       | Success(_) =>
         // We're _really_ hoping amazon holds to their API contract here.
         // If not, we're going to see null type errors.
-        Js.log2("Raw Response", res);
+
         let signUpResponse = makeSignupResponse(res);
         let cddDecoder = signUpResponse->codeDeliveryDetailsDecoderGet;
         let codeDeliveryDetails = {
@@ -265,7 +265,7 @@ let initiateAuth = (config, ~username: string, ~password: string, ()) => {
              This is the raw response. Not sure what to do with this if anything. What is `tag:1`
              Raw Response [ [ 200, tag: 1 ], {} ]
        Raw Response [ [ 200, tag: 1 ], {} ] */
-      Js.log2("Raw Response", res);
+
 
       switch (res.status) {
       | Success(_) =>
@@ -322,7 +322,7 @@ let changePassword =
              This is the raw response. Not sure what to do with this if anything. What is `tag:1`
              Raw Response [ [ 200, tag: 1 ], {} ]
        Raw Response [ [ 200, tag: 1 ], {} ] */
-      Js.log2("Raw Response", res);
+
 
       switch (res.status) {
       | Success(_) =>
@@ -362,7 +362,7 @@ let signOut =
   Client.request(config, SignOut, params)
   ->Future.flatMapOk(res => {
 
-      Js.log2("Raw Response", res);
+
 
       switch (res.status) {
       | Success(_) =>
@@ -402,7 +402,7 @@ let deleteUser =
   Client.request(config, InitiateAuth, params)
   ->Future.flatMapOk(res => {
 
-      Js.log2("Raw Response", res);
+
 
       switch (res.status) {
       | Success(_) =>
