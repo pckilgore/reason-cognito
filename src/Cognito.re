@@ -28,7 +28,7 @@ module type Client = {
     json: Js.Json.t,
   };
   let request:
-    (t, string, Js.Dict.t(Js.Json.t)) =>
+    (t, string, Js.Dict.t(Js.Json.t), t, operation, Js.Dict.t(Js.Json.t)) =>
     Future.t(Belt.Result.t(response, [< error]));
 };
 
@@ -65,7 +65,7 @@ module Client = {
   // returns an error code (4XX, 5XX), that should be handled elsewhere.
   //
   // TODO: More generic implemntation (no Js.* types)
-  let request = (config, operation: operation, params: Js.Dict.t(Js.Json.t)) => {
+  let request = (config, operation, params: Js.Dict.t(Js.Json.t)) => {
     // Setup headers.
     let headers = Js.Dict.empty();
     let target =
@@ -148,9 +148,7 @@ let signUp =
   Js.Dict.set(payload, "ValidationData", Js.Json.objectArray(jsonVData));
 
   Client.request(config, SignUp, payload)
-  ->Future.flatMapOk(res => {
-
-
+  ->Future.flatMapOk(res =>
       switch (res.status) {
       | Success(_) =>
         // We're _really_ hoping amazon holds to their API contract here.
@@ -206,8 +204,8 @@ let signUp =
           | _ => `CognitoUnknownError(msg)
           };
         Future.make(resolve => resolve(Belt.Result.Error(err)));
-      };
-    });
+      }
+    );
 };
 type confirmSignUpErrors = [ | `CognitoConfirmationCodeValidation(string)];
 let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
@@ -217,7 +215,7 @@ let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
   Js.Dict.set(params, "ConfirmationCode", Js.Json.string(confirmationCode));
 
   Client.request(config, ConfirmSignUp, params)
-  ->Future.flatMapOk(res => {
+  ->Future.flatMapOk(res =>
       switch (res.status) {
       | Success(_) =>
         // We're _really_ hoping amazon holds to their API contract here.
@@ -246,8 +244,8 @@ let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
           | _ => `CognitoUnknownError(msg)
           };
         Future.make(resolve => resolve(Belt.Result.Error(err)));
-      };
-    });
+      }
+    );
 };
 
 type signInExceptions = [ | `NotAuthorizedException(string)];
@@ -260,13 +258,11 @@ let initiateAuth = (config, ~username: string, ~password: string, ()) => {
   Js.Dict.set(params, "AuthParameters", Js.Json.object_(authParams));
   Js.Dict.set(params, "AuthFlow", Js.Json.string("USER_PASSWORD_AUTH"));
   Client.request(config, InitiateAuth, params)
-  ->Future.flatMapOk(res => {
+  ->Future.flatMapOk(res =>
       /*
              This is the raw response. Not sure what to do with this if anything. What is `tag:1`
              Raw Response [ [ 200, tag: 1 ], {} ]
        Raw Response [ [ 200, tag: 1 ], {} ] */
-
-
       switch (res.status) {
       | Success(_) =>
         // We're _really_ hoping amazon holds to their API contract here.
@@ -304,6 +300,6 @@ let initiateAuth = (config, ~username: string, ~password: string, ()) => {
           | _ => `CognitoUnknownError(msg)
           };
         Future.make(resolve => resolve(Belt.Result.Error(err)));
-      };
-    });
+      }
+    );
 };
