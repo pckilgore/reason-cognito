@@ -1,0 +1,75 @@
+record api:
+// module CognitoRecord: {
+//   type config = {
+//     clientId: string,
+//     endpoint: string,
+//   };
+//   type t = {log: string => unit};
+//   let make: (~clientId: string, ~region: string) => t;
+// } = {
+//   type config = {
+//     clientId: string,
+//     endpoint: string,
+//   };
+//   type t = {log: string => unit};
+//   let _log = (config, msg) => Js.log3(msg, config.clientId, config.endpoint);
+//   let make = (~clientId: string, ~region: string) => {
+//     let config = {
+//       clientId,
+//       endpoint: "https://cognito-idp." ++ region ++ ".amazonaws.com/",
+//     };
+//     {log: _log(config)};
+//   };
+// };
+// let cogRec = CognitoRecord.make(~clientId="12345", ~region="us-east-2");
+// cogRec.log("Hello world");
+
+misc:
+
+[@bs.deriving jsConverter]
+type response_type = [ | [@bs.as "code"] `Code | [@bs.as "token"] `Token];
+type config = {
+  response_type,
+  client_id: string,
+};
+let emailAttribute = Js.Dict.empty();
+Js.Dict.set(emailAttribute, "Name", "email");
+Js.Dict.set(emailAttribute, "Value", "reasoncog@pck.email");
+
+Cognito.signUp(
+  ~username="patrickasdf",
+  ~password="123Password#",
+  ~attributes=[|emailAttribute|],
+  (),
+)
+->Future.mapError(err => Js.log(err))
+->Future.mapOk(response =>
+    switch (response) {
+    | Ok(resp) => Js.log2("hey it worked", resp)
+    | InvalidParameterException(msg)
+    | UsernameExistsException(msg) => Js.log2("Errmsg: ", msg)
+    | ReasonCognitoUnknownErrorException(msg) => Js.log(msg)
+    }
+  );
+module type LoggerModule = {
+  type t;
+  let create: string => t;
+  let log: string => unit;
+};
+module CustomLogger = {
+  type t = {
+    prefix: string,
+    mutable count: int,
+  };
+  let create = config => {prefix: config, count: 0};
+  let log = (t, msg) => {
+    t.count = t.count + 1;
+    Js.log2(Js.String.make(t.count) ++ t.prefix, msg);
+  };
+};
+let helloLogger = CustomLogger.create("hello");
+let configuredLogger = CustomLogger.log(helloLogger, "world");
+CustomLogger.log(helloLogger, "world");
+CustomLogger.log(helloLogger, "world");
+CustomLogger.log(helloLogger, "world");
+CustomLogger.log(helloLogger, "world");
