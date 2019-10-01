@@ -4,21 +4,21 @@ let auth =
 region: UsEast1 */
 let emailAttribute = Js.Dict.empty();
 Js.Dict.set(emailAttribute, "Name", "email");
-Js.Dict.set(emailAttribute, "Value", "aa.rmand.inbox@gmail.com");
+Js.Dict.set(emailAttribute, "Value", "aa.rmand.in.box@gmail.com");
 
 // let testRequest =
 //   auth->Cognito.signUp(
-//     ~username="sometestuser2",
+//     ~username="sometestuser3",
 //     ~password="Password12345@",
 //     ~attributes=[|emailAttribute|],
 //     (),
 //   );
-// let confirmSignUp =
-//   auth->Cognito.confirmSignUp(
-//     ~username="sometestuser2",
-//     ~confirmationCode="301529",
-//     (),
-//   );
+let confirmSignUp =
+  auth->Cognito.confirmSignUp(
+    ~username="sometestuser3",
+    ~confirmationCode="301529",
+    (),
+  );
 /* get `accessToken` from `signUp` response object, pass it to `changePassword` */
 // let changePassword =
 //   auth->Cognito.changePassword(
@@ -30,11 +30,11 @@ Js.Dict.set(emailAttribute, "Value", "aa.rmand.inbox@gmail.com");
 //   );
 
 // works with new password
-let signIn =
-  auth->Cognito.signIn(
-    ~username="sometestuser2",
-    ~password="Password12345#",
-    (),
-  );
+// let signIn =
+//   auth->Cognito.initiateAuth(
+//     ~username="sometestuser2",
+//     ~password="Password12345#",
+//     (),
+//   );
 // let signOut =
 //   auth->Cognito.signOut();

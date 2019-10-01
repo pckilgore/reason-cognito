@@ -9,11 +9,11 @@ var emailAttribute = { };
 
 emailAttribute["Name"] = "email";
 
-emailAttribute["Value"] = "aa.rmand.inbox@gmail.com";
+emailAttribute["Value"] = "aa.rmand.in.box@gmail.com";
 
-var signIn = Cognito.signIn(auth, "sometestuser2", "Password12345#", /* () */0);
+var confirmSignUp = Cognito.confirmSignUp(auth, "sometestuser3", "301529", /* () */0);
 
 exports.auth = auth;
 exports.emailAttribute = emailAttribute;
-exports.signIn = signIn;
+exports.confirmSignUp = confirmSignUp;
 /* auth Not a pure module */

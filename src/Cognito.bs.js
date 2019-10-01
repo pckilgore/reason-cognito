@@ -212,7 +212,6 @@ function confirmSignUp(config, username, confirmationCode, param) {
   params["Username"] = username;
   params["ConfirmationCode"] = confirmationCode;
   return Future.flatMapOk(request(config, /* ConfirmSignUp */3, params), (function (res) {
-                console.log("Raw Response", res);
                 var match = res[/* status */0];
                 if (match.tag === /* Success */1) {
                   return Future.make((function (resolve) {
@@ -236,7 +235,7 @@ function confirmSignUp(config, username, confirmationCode, param) {
               }));
 }
 
-function signIn(config, username, password, param) {
+function initiateAuth(config, username, password, param) {
   var authParams = { };
   authParams["USERNAME"] = username;
   authParams["PASSWORD"] = password;
@@ -387,7 +386,7 @@ exports.Client = Client;
 exports.jsonMapString = jsonMapString;
 exports.signUp = signUp;
 exports.confirmSignUp = confirmSignUp;
-exports.signIn = signIn;
+exports.initiateAuth = initiateAuth;
 exports.changePassword = changePassword;
 exports.signOut = signOut;
 exports.deleteUser = deleteUser;

@@ -218,12 +218,6 @@ let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
 
   Client.request(config, ConfirmSignUp, params)
   ->Future.flatMapOk(res => {
-      /*
-             This is the raw response. Not sure what to do with this if anything. What is `tag:1`
-             Raw Response [ [ 200, tag: 1 ], {} ]
-       Raw Response [ [ 200, tag: 1 ], {} ] */
-      Js.log2("Raw Response", res);
-
       switch (res.status) {
       | Success(_) =>
         // We're _really_ hoping amazon holds to their API contract here.
@@ -257,7 +251,7 @@ let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
 };
 
 type signInExceptions = [ | `NotAuthorizedException(string)];
-let signIn = (config, ~username: string, ~password: string, ()) => {
+let initiateAuth = (config, ~username: string, ~password: string, ()) => {
   let authParams = Js.Dict.empty();
   Js.Dict.set(authParams, "USERNAME", Js.Json.string(username));
   Js.Dict.set(authParams, "PASSWORD", Js.Json.string(password));
