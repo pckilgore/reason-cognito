@@ -134,6 +134,27 @@ type signUpErrors = [
   | `CognitoUsernameExists(string)
   | `CognitoConfirmationCodeValidation(string)
 ];
+let makeSignUpError = (err, msg) =>
+  switch (err) {
+  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
+  | "UsernameExistsException" => `CognitoUsernameExists(msg)
+  | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(msg)
+  | "InternalErrorException" => `CognitoInternalError(msg)
+  | "InvalidEmailRoleAccessPolicyException" =>
+    `CognitoInvalidEmailRoleAccessPolicy(msg)
+  | "InvalidLambdaResponseException" => `CognitoInvalidLambdaResponse(msg)
+  | "InvalidPasswordException" => `CognitoInvalidPassword(msg)
+  | "InvalidSmsRoleAccessPolicysException" =>
+    `CognitoInvalidSmsRoleAccessPolicys(msg)
+  | "InvalidSmsRoleTrustRelationshipException" =>
+    `CognitoInvalidSmsRoleTrustRelationship(msg)
+  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
+  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
+  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
+  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
+  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
+  | _ => `CognitoUnknownError(msg)
+  };
 
 let signUp =
     (config, ~username, ~password, ~attributes=[||], ~validationData=[||], ()) => {
@@ -180,34 +201,47 @@ let signUp =
         let isErrorResponse = makeResponse(res.json);
         let err = isErrorResponse->__typeGet;
         let msg = isErrorResponse->messageGet;
-        let err =
-          switch (err) {
-          | "InvalidParameterException" => `CognitoInvalidParameter(msg)
-          | "UsernameExistsException" => `CognitoUsernameExists(msg)
-          | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(msg)
-          | "InternalErrorException" => `CognitoInternalError(msg)
-          | "InvalidEmailRoleAccessPolicyException" =>
-            `CognitoInvalidEmailRoleAccessPolicy(msg)
-          | "InvalidLambdaResponseException" =>
-            `CognitoInvalidLambdaResponse(msg)
-          | "InvalidPasswordException" => `CognitoInvalidPassword(msg)
-          | "InvalidSmsRoleAccessPolicysException" =>
-            `CognitoInvalidSmsRoleAccessPolicys(msg)
-          | "InvalidSmsRoleTrustRelationshipException" =>
-            `CognitoInvalidSmsRoleTrustRelationship(msg)
-          | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
-          | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
-          | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
-          | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
-          | "UserLambdaValidationException" =>
-            `CognitoUserLambdaValidation(msg)
-          | _ => `CognitoUnknownError(msg)
-          };
+        let err = makeSignUpError(err, msg);
         Future.make(resolve => resolve(Belt.Result.Error(err)));
       }
     );
 };
-type confirmSignUpErrors = [ | `CognitoConfirmationCodeValidation(string)];
+type confirmSignUpErrors = [
+  | `CognitoAliasExists(string)
+  | `CognitoCodeMismatch(string)
+  | `CognitoExpiredCode(string)
+  | `CognitoInternalError(string)
+  | `CognitoInvalidLambda(string)
+  | `CognitoInvalidParameter(string)
+  | `CognitoLimitExceeded(string)
+  | `CognitoNotAuthorized(string)
+  | `CognitoResourceNotFound(string)
+  | `CognitoTooManyFailedAttempts(string)
+  | `CognitoTooManyRequests(string)
+  | `CognitoUnexpectedLambda(string)
+  | `CognitoUserLambdaValidation(string)
+  | `CognitoUserNotFound(string)
+];
+let makeConfirmError = (err, msg) =>
+  switch (err) {
+  | "AliasExistsException" => `CognitoAliasExists(msg)
+  | "CodeMismatchException" => `CognitoCodeMismatch(msg)
+  | "ExpiredCodeException" => `CognitoExpiredCode(msg)
+  | "InternalErrorException" => `CognitoInternalError(msg)
+  | "InvalidLambdaResponseException" => `CognitoInvalidLambda(msg)
+  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
+  | "LimitExceededException" => `CognitoLimitExceeded(msg)
+  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
+  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
+  | "TooManyFailedAttemptsException" => `CognitoTooManyFailedAttempts(msg)
+  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
+  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
+
+  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
+  | "UserNotFoundException" => `CognitoUserNotFound(msg)
+  | _ => `CognitoUnknownError(msg)
+  };
+
 let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
   let params = Js.Dict.empty();
 
@@ -238,11 +272,8 @@ let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
         let isErrorResponse = makeResponse(res.json);
         let err = isErrorResponse->__typeGet;
         let msg = isErrorResponse->messageGet;
-        let err =
-          switch (err) {
-          | "CodeMismatchException" => `CognitoConfirmationCodeValidation(msg)
-          | _ => `CognitoUnknownError(msg)
-          };
+        let err = makeConfirmError(err, msg);
+
         Future.make(resolve => resolve(Belt.Result.Error(err)));
       }
     );
@@ -259,10 +290,6 @@ let initiateAuth = (config, ~username: string, ~password: string, ()) => {
   Js.Dict.set(params, "AuthFlow", Js.Json.string("USER_PASSWORD_AUTH"));
   Client.request(config, InitiateAuth, params)
   ->Future.flatMapOk(res =>
-      /*
-             This is the raw response. Not sure what to do with this if anything. What is `tag:1`
-             Raw Response [ [ 200, tag: 1 ], {} ]
-       Raw Response [ [ 200, tag: 1 ], {} ] */
       switch (res.status) {
       | Success(_) =>
         // We're _really_ hoping amazon holds to their API contract here.
