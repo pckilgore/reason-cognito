@@ -1,7 +1,31 @@
+/* https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html#API_InitiateAuth_RequestSyntax */
 type authenticationFlowType =
   | USER_PASSWORD_AUTH
   | USER_SRP_AUTH
   | CUSTOM_AUTH;
+/* all operations found in https://github.com/aws-amplify/amplify-js/blob/master/packages/amazon-cognito-identity-js/src/CognitoUserPool.js except `SignUp` which is in `CognitoUserPool.js`*/
+type operation =
+  | SignUp
+  | SignIn
+  | SignOut
+  | ConfirmSignUp
+  | ChangePassword
+  | RespondToAuthChallenge
+  | ForgotPassword
+  | ConfirmForgotPassword
+  | InitiateAuth;
+
+let makeOperationString =
+  fun
+  | SignUp => "SignUp"
+  | SignIn => "SignIn"
+  | SignOut => "SignOut"
+  | ConfirmSignUp => "ConfirmSignUp"
+  | ChangePassword => "ChangePassword"
+  | RespondToAuthChallenge => "RespondToAuthChallenge"
+  | ForgotPassword => "ForgotPassword"
+  | ConfirmForgotPassword => "ConfirmForgotPassword"
+  | InitiateAuth => "InitiateAuth";
 
 type supportedRegions =
   | UsEast1
@@ -74,3 +98,38 @@ type amznErrResponse = {
 
 external makeSignupResponse: 't => signUpResponseDecoder = "%identity";
 external makeResponse: Js.Json.t => amznErrResponse = "%identity";
+
+[@bs.deriving abstract]
+type authenticationResultDecoder = {
+  [@bs.as "AccessToken"]
+  accessToken: string,
+  [@bs.as "ExpiresIn"]
+  expiresIn: int,
+  [@bs.as "IdToken"]
+  idToken: string,
+  [@bs.as "RefreshToken"]
+  refreshToken: string,
+  [@bs.as "TokenType"]
+  tokenType: string,
+};
+
+[@bs.deriving abstract]
+type signInResponseDecoder = {
+  [@bs.as "AuthenticationResult"]
+  authenticationResultDecoder,
+  [@bs.as "ChallengeParameters"]
+  challengeParameters: Js.Json.t,
+};
+type signInResponse = {
+  authenticationResult,
+  challengeParameters: Js.Json.t,
+}
+and authenticationResult = {
+  accessToken: string,
+  expiresIn: int,
+  idToken: string,
+  refreshToken: string,
+  tokenType: string,
+};
+
+external makeSignInResponse: 't => signInResponseDecoder = "%identity";

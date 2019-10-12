@@ -28,7 +28,7 @@ module type Client = {
     json: Js.Json.t,
   };
   let request:
-    (t, string, Js.Dict.t(Js.Json.t)) =>
+    (t, string, Js.Dict.t(Js.Json.t), t, operation, Js.Dict.t(Js.Json.t)) =>
     Future.t(Belt.Result.t(response, [< error]));
 };
 
@@ -68,7 +68,8 @@ module Client = {
   let request = (config, operation, params: Js.Dict.t(Js.Json.t)) => {
     // Setup headers.
     let headers = Js.Dict.empty();
-    let target = "AWSCognitoIdentityProviderService." ++ operation;
+    let target =
+      "AWSCognitoIdentityProviderService." ++ makeOperationString(operation);
     Js.Dict.set(headers, "X-Amz-Target", target);
     Js.Dict.set(headers, "Content-Type", "application/x-amz-json-1.1");
     Js.Dict.set(headers, "X-Amz-User-Agent", "reason-cognito/0.1.x js");
@@ -131,7 +132,29 @@ type signUpErrors = [
   | `CognitoUnexpectedLambda(string)
   | `CognitoUserLambdaValidation(string)
   | `CognitoUsernameExists(string)
+  | `CognitoConfirmationCodeValidation(string)
 ];
+let makeSignUpError = (err, msg) =>
+  switch (err) {
+  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
+  | "UsernameExistsException" => `CognitoUsernameExists(msg)
+  | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(msg)
+  | "InternalErrorException" => `CognitoInternalError(msg)
+  | "InvalidEmailRoleAccessPolicyException" =>
+    `CognitoInvalidEmailRoleAccessPolicy(msg)
+  | "InvalidLambdaResponseException" => `CognitoInvalidLambdaResponse(msg)
+  | "InvalidPasswordException" => `CognitoInvalidPassword(msg)
+  | "InvalidSmsRoleAccessPolicysException" =>
+    `CognitoInvalidSmsRoleAccessPolicys(msg)
+  | "InvalidSmsRoleTrustRelationshipException" =>
+    `CognitoInvalidSmsRoleTrustRelationship(msg)
+  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
+  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
+  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
+  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
+  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
+  | _ => `CognitoUnknownError(msg)
+  };
 
 let signUp =
     (config, ~username, ~password, ~attributes=[||], ~validationData=[||], ()) => {
@@ -145,12 +168,13 @@ let signUp =
   Js.Dict.set(payload, "UserAttributes", Js.Json.objectArray(jsonAttribs));
   Js.Dict.set(payload, "ValidationData", Js.Json.objectArray(jsonVData));
 
-  Client.request(config, "SignUp", payload)
+  Client.request(config, SignUp, payload)
   ->Future.flatMapOk(res =>
       switch (res.status) {
       | Success(_) =>
         // We're _really_ hoping amazon holds to their API contract here.
         // If not, we're going to see null type errors.
+
         let signUpResponse = makeSignupResponse(res);
         let cddDecoder = signUpResponse->codeDeliveryDetailsDecoderGet;
         let codeDeliveryDetails = {
@@ -177,27 +201,129 @@ let signUp =
         let isErrorResponse = makeResponse(res.json);
         let err = isErrorResponse->__typeGet;
         let msg = isErrorResponse->messageGet;
+        let err = makeSignUpError(err, msg);
+        Future.make(resolve => resolve(Belt.Result.Error(err)));
+      }
+    );
+};
+type confirmSignUpErrors = [
+  | `CognitoAliasExists(string)
+  | `CognitoCodeMismatch(string)
+  | `CognitoExpiredCode(string)
+  | `CognitoInternalError(string)
+  | `CognitoInvalidLambda(string)
+  | `CognitoInvalidParameter(string)
+  | `CognitoLimitExceeded(string)
+  | `CognitoNotAuthorized(string)
+  | `CognitoResourceNotFound(string)
+  | `CognitoTooManyFailedAttempts(string)
+  | `CognitoTooManyRequests(string)
+  | `CognitoUnexpectedLambda(string)
+  | `CognitoUserLambdaValidation(string)
+  | `CognitoUserNotFound(string)
+];
+let makeConfirmError = (err, msg) =>
+  switch (err) {
+  | "AliasExistsException" => `CognitoAliasExists(msg)
+  | "CodeMismatchException" => `CognitoCodeMismatch(msg)
+  | "ExpiredCodeException" => `CognitoExpiredCode(msg)
+  | "InternalErrorException" => `CognitoInternalError(msg)
+  | "InvalidLambdaResponseException" => `CognitoInvalidLambda(msg)
+  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
+  | "LimitExceededException" => `CognitoLimitExceeded(msg)
+  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
+  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
+  | "TooManyFailedAttemptsException" => `CognitoTooManyFailedAttempts(msg)
+  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
+  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
+
+  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
+  | "UserNotFoundException" => `CognitoUserNotFound(msg)
+  | _ => `CognitoUnknownError(msg)
+  };
+
+let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
+  let params = Js.Dict.empty();
+
+  Js.Dict.set(params, "Username", Js.Json.string(username));
+  Js.Dict.set(params, "ConfirmationCode", Js.Json.string(confirmationCode));
+
+  Client.request(config, ConfirmSignUp, params)
+  ->Future.flatMapOk(res =>
+      switch (res.status) {
+      | Success(_) =>
+        // We're _really_ hoping amazon holds to their API contract here.
+        // If not, we're going to see null type errors.
+        Future.make(resolve =>
+          resolve(
+            Belt.Result.Ok(
+              {
+                res;
+              },
+            ),
+          )
+        )
+      | Informational(_)
+      | Redirect(_)
+      | ClientError(_)
+      | ServerError(_) =>
+        // We're _really_ hoping amazon holds to their API contract here too.
+        // Although the unknownerror variant helps lots.
+        let isErrorResponse = makeResponse(res.json);
+        let err = isErrorResponse->__typeGet;
+        let msg = isErrorResponse->messageGet;
+        let err = makeConfirmError(err, msg);
+
+        Future.make(resolve => resolve(Belt.Result.Error(err)));
+      }
+    );
+};
+
+type signInExceptions = [ | `NotAuthorizedException(string)];
+let initiateAuth = (config, ~username: string, ~password: string, ()) => {
+  let authParams = Js.Dict.empty();
+  Js.Dict.set(authParams, "USERNAME", Js.Json.string(username));
+  Js.Dict.set(authParams, "PASSWORD", Js.Json.string(password));
+
+  let params = Js.Dict.empty();
+  Js.Dict.set(params, "AuthParameters", Js.Json.object_(authParams));
+  Js.Dict.set(params, "AuthFlow", Js.Json.string("USER_PASSWORD_AUTH"));
+  Client.request(config, InitiateAuth, params)
+  ->Future.flatMapOk(res =>
+      switch (res.status) {
+      | Success(_) =>
+        // We're _really_ hoping amazon holds to their API contract here.
+        // If not, we're going to see null type errors.
+        let signInResponse = makeSignInResponse(res);
+        let authDecoder = signInResponse->authenticationResultDecoderGet;
+        let authenticationResult = {
+          accessToken: authDecoder->accessTokenGet,
+          idToken: authDecoder->idTokenGet,
+          refreshToken: authDecoder->refreshTokenGet,
+          tokenType: authDecoder->tokenTypeGet,
+          expiresIn: authDecoder->expiresInGet,
+        };
+        Future.make(resolve =>
+          resolve(
+            Belt.Result.Ok({
+              authenticationResult,
+              challengeParameters: signInResponse->challengeParametersGet,
+            }),
+          )
+        );
+      | Informational(_)
+      | Redirect(_)
+      | ClientError(_)
+      | ServerError(_) =>
+        // We're _really_ hoping amazon holds to their API contract here too.
+        // Although the unknownerror variant helps lots.
+        let isErrorResponse = makeResponse(res.json);
+        let err = isErrorResponse->__typeGet;
+        let msg = isErrorResponse->messageGet;
         let err =
           switch (err) {
           | "InvalidParameterException" => `CognitoInvalidParameter(msg)
-          | "UsernameExistsException" => `CognitoUsernameExists(msg)
-          | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(msg)
-          | "InternalErrorException" => `CognitoInternalError(msg)
-          | "InvalidEmailRoleAccessPolicyException" =>
-            `CognitoInvalidEmailRoleAccessPolicy(msg)
-          | "InvalidLambdaResponseException" =>
-            `CognitoInvalidLambdaResponse(msg)
-          | "InvalidPasswordException" => `CognitoInvalidPassword(msg)
-          | "InvalidSmsRoleAccessPolicysException" =>
-            `CognitoInvalidSmsRoleAccessPolicys(msg)
-          | "InvalidSmsRoleTrustRelationshipException" =>
-            `CognitoInvalidSmsRoleTrustRelationship(msg)
           | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
-          | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
-          | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
-          | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
-          | "UserLambdaValidationException" =>
-            `CognitoUserLambdaValidation(msg)
           | _ => `CognitoUnknownError(msg)
           };
         Future.make(resolve => resolve(Belt.Result.Error(err)));

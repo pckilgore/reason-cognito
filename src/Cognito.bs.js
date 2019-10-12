@@ -25,7 +25,7 @@ function makeConfig(poolId, clientId, region, $staropt$star, param) {
 
 function request(config, operation, params) {
   var headers = { };
-  var target = "AWSCognitoIdentityProviderService." + operation;
+  var target = "AWSCognitoIdentityProviderService." + Types.makeOperationString(operation);
   headers["X-Amz-Target"] = target;
   headers["Content-Type"] = "application/x-amz-json-1.1";
   headers["X-Amz-User-Agent"] = "reason-cognito/0.1.x js";
@@ -72,6 +72,86 @@ function jsonMapString(arr) {
               }), arr);
 }
 
+function makeSignUpError(err, msg) {
+  switch (err) {
+    case "CodeDeliveryFailureException" :
+        return /* `CognitoCodeDeliveryFailure */[
+                307717752,
+                msg
+              ];
+    case "InternalErrorException" :
+        return /* `CognitoInternalError */[
+                636052602,
+                msg
+              ];
+    case "InvalidEmailRoleAccessPolicyException" :
+        return /* `CognitoInvalidEmailRoleAccessPolicy */[
+                -320011326,
+                msg
+              ];
+    case "InvalidLambdaResponseException" :
+        return /* `CognitoInvalidLambdaResponse */[
+                -1072578002,
+                msg
+              ];
+    case "InvalidParameterException" :
+        return /* `CognitoInvalidParameter */[
+                -267133469,
+                msg
+              ];
+    case "InvalidPasswordException" :
+        return /* `CognitoInvalidPassword */[
+                -17702879,
+                msg
+              ];
+    case "InvalidSmsRoleAccessPolicysException" :
+        return /* `CognitoInvalidSmsRoleAccessPolicys */[
+                598714580,
+                msg
+              ];
+    case "InvalidSmsRoleTrustRelationshipException" :
+        return /* `CognitoInvalidSmsRoleTrustRelationship */[
+                -198400121,
+                msg
+              ];
+    case "NotAuthorizedException" :
+        return /* `CognitoNotAuthorized */[
+                -1019683139,
+                msg
+              ];
+    case "ResourceNotFoundException" :
+        return /* `CognitoResourceNotFound */[
+                281060686,
+                msg
+              ];
+    case "TooManyRequestsException" :
+        return /* `CognitoTooManyRequests */[
+                165203366,
+                msg
+              ];
+    case "UnexpectedLambdaException" :
+        return /* `CognitoUnexpectedLambda */[
+                -539579927,
+                msg
+              ];
+    case "UserLambdaValidationException" :
+        return /* `CognitoUserLambdaValidation */[
+                1019055420,
+                msg
+              ];
+    case "UsernameExistsException" :
+        return /* `CognitoUsernameExists */[
+                -157849469,
+                msg
+              ];
+    default:
+      return /* `CognitoUnknownError */[
+              -55570033,
+              msg
+            ];
+  }
+}
+
 function signUp(config, username, password, $staropt$star, $staropt$star$1, param) {
   var attributes = $staropt$star !== undefined ? $staropt$star : /* array */[];
   var validationData = $staropt$star$1 !== undefined ? $staropt$star$1 : /* array */[];
@@ -82,7 +162,7 @@ function signUp(config, username, password, $staropt$star, $staropt$star$1, para
   payload["Password"] = password;
   payload["UserAttributes"] = jsonAttribs;
   payload["ValidationData"] = jsonVData;
-  return Future.flatMapOk(request(config, "SignUp", payload), (function (res) {
+  return Future.flatMapOk(request(config, /* SignUp */0, payload), (function (res) {
                 var match = res[/* status */0];
                 if (match.tag === /* Success */1) {
                   var cddDecoder = res.CodeDeliveryDetails;
@@ -106,89 +186,160 @@ function signUp(config, username, password, $staropt$star, $staropt$star$1, para
                   var isErrorResponse = res[/* json */1];
                   var err = isErrorResponse.__type;
                   var msg = isErrorResponse.message;
+                  var err$1 = makeSignUpError(err, msg);
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Error */Block.__(1, [err$1]));
+                              }));
+                }
+              }));
+}
+
+function makeConfirmError(err, msg) {
+  switch (err) {
+    case "AliasExistsException" :
+        return /* `CognitoAliasExists */[
+                -498244869,
+                msg
+              ];
+    case "CodeMismatchException" :
+        return /* `CognitoCodeMismatch */[
+                -817363892,
+                msg
+              ];
+    case "ExpiredCodeException" :
+        return /* `CognitoExpiredCode */[
+                -64788767,
+                msg
+              ];
+    case "InternalErrorException" :
+        return /* `CognitoInternalError */[
+                636052602,
+                msg
+              ];
+    case "InvalidLambdaResponseException" :
+        return /* `CognitoInvalidLambda */[
+                -469073267,
+                msg
+              ];
+    case "InvalidParameterException" :
+        return /* `CognitoInvalidParameter */[
+                -267133469,
+                msg
+              ];
+    case "LimitExceededException" :
+        return /* `CognitoLimitExceeded */[
+                767083101,
+                msg
+              ];
+    case "NotAuthorizedException" :
+        return /* `CognitoNotAuthorized */[
+                -1019683139,
+                msg
+              ];
+    case "ResourceNotFoundException" :
+        return /* `CognitoResourceNotFound */[
+                281060686,
+                msg
+              ];
+    case "TooManyFailedAttemptsException" :
+        return /* `CognitoTooManyFailedAttempts */[
+                261105285,
+                msg
+              ];
+    case "TooManyRequestsException" :
+        return /* `CognitoTooManyRequests */[
+                165203366,
+                msg
+              ];
+    case "UnexpectedLambdaException" :
+        return /* `CognitoUnexpectedLambda */[
+                -539579927,
+                msg
+              ];
+    case "UserLambdaValidationException" :
+        return /* `CognitoUserLambdaValidation */[
+                1019055420,
+                msg
+              ];
+    case "UserNotFoundException" :
+        return /* `CognitoUserNotFound */[
+                376697675,
+                msg
+              ];
+    default:
+      return /* `CognitoUnknownError */[
+              -55570033,
+              msg
+            ];
+  }
+}
+
+function confirmSignUp(config, username, confirmationCode, param) {
+  var params = { };
+  params["Username"] = username;
+  params["ConfirmationCode"] = confirmationCode;
+  return Future.flatMapOk(request(config, /* ConfirmSignUp */3, params), (function (res) {
+                var match = res[/* status */0];
+                if (match.tag === /* Success */1) {
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Ok */Block.__(0, [res]));
+                              }));
+                } else {
+                  var isErrorResponse = res[/* json */1];
+                  var err = isErrorResponse.__type;
+                  var msg = isErrorResponse.message;
+                  var err$1 = makeConfirmError(err, msg);
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Error */Block.__(1, [err$1]));
+                              }));
+                }
+              }));
+}
+
+function initiateAuth(config, username, password, param) {
+  var authParams = { };
+  authParams["USERNAME"] = username;
+  authParams["PASSWORD"] = password;
+  var params = { };
+  params["AuthParameters"] = authParams;
+  params["AuthFlow"] = "USER_PASSWORD_AUTH";
+  return Future.flatMapOk(request(config, /* InitiateAuth */8, params), (function (res) {
+                var match = res[/* status */0];
+                if (match.tag === /* Success */1) {
+                  var authDecoder = res.AuthenticationResult;
+                  var authenticationResult_000 = /* accessToken */authDecoder.AccessToken;
+                  var authenticationResult_001 = /* expiresIn */authDecoder.ExpiresIn;
+                  var authenticationResult_002 = /* idToken */authDecoder.IdToken;
+                  var authenticationResult_003 = /* refreshToken */authDecoder.RefreshToken;
+                  var authenticationResult_004 = /* tokenType */authDecoder.TokenType;
+                  var authenticationResult = /* record */[
+                    authenticationResult_000,
+                    authenticationResult_001,
+                    authenticationResult_002,
+                    authenticationResult_003,
+                    authenticationResult_004
+                  ];
+                  return Future.make((function (resolve) {
+                                return Curry._1(resolve, /* Ok */Block.__(0, [/* record */[
+                                                /* authenticationResult */authenticationResult,
+                                                /* challengeParameters */res.ChallengeParameters
+                                              ]]));
+                              }));
+                } else {
+                  var isErrorResponse = res[/* json */1];
+                  var err = isErrorResponse.__type;
+                  var msg = isErrorResponse.message;
                   var err$1;
                   switch (err) {
-                    case "CodeDeliveryFailureException" :
-                        err$1 = /* `CognitoCodeDeliveryFailure */[
-                          307717752,
-                          msg
-                        ];
-                        break;
-                    case "InternalErrorException" :
-                        err$1 = /* `CognitoInternalError */[
-                          636052602,
-                          msg
-                        ];
-                        break;
-                    case "InvalidEmailRoleAccessPolicyException" :
-                        err$1 = /* `CognitoInvalidEmailRoleAccessPolicy */[
-                          -320011326,
-                          msg
-                        ];
-                        break;
-                    case "InvalidLambdaResponseException" :
-                        err$1 = /* `CognitoInvalidLambdaResponse */[
-                          -1072578002,
-                          msg
-                        ];
-                        break;
                     case "InvalidParameterException" :
                         err$1 = /* `CognitoInvalidParameter */[
                           -267133469,
                           msg
                         ];
                         break;
-                    case "InvalidPasswordException" :
-                        err$1 = /* `CognitoInvalidPassword */[
-                          -17702879,
-                          msg
-                        ];
-                        break;
-                    case "InvalidSmsRoleAccessPolicysException" :
-                        err$1 = /* `CognitoInvalidSmsRoleAccessPolicys */[
-                          598714580,
-                          msg
-                        ];
-                        break;
-                    case "InvalidSmsRoleTrustRelationshipException" :
-                        err$1 = /* `CognitoInvalidSmsRoleTrustRelationship */[
-                          -198400121,
-                          msg
-                        ];
-                        break;
                     case "NotAuthorizedException" :
                         err$1 = /* `CognitoNotAuthorized */[
                           -1019683139,
-                          msg
-                        ];
-                        break;
-                    case "ResourceNotFoundException" :
-                        err$1 = /* `CognitoResourceNotFound */[
-                          281060686,
-                          msg
-                        ];
-                        break;
-                    case "TooManyRequestsException" :
-                        err$1 = /* `CognitoTooManyRequests */[
-                          165203366,
-                          msg
-                        ];
-                        break;
-                    case "UnexpectedLambdaException" :
-                        err$1 = /* `CognitoUnexpectedLambda */[
-                          -539579927,
-                          msg
-                        ];
-                        break;
-                    case "UserLambdaValidationException" :
-                        err$1 = /* `CognitoUserLambdaValidation */[
-                          1019055420,
-                          msg
-                        ];
-                        break;
-                    case "UsernameExistsException" :
-                        err$1 = /* `CognitoUsernameExists */[
-                          -157849469,
                           msg
                         ];
                         break;
@@ -208,5 +359,9 @@ function signUp(config, username, password, $staropt$star, $staropt$star$1, para
 exports.makeConfig = makeConfig;
 exports.Client = Client;
 exports.jsonMapString = jsonMapString;
+exports.makeSignUpError = makeSignUpError;
 exports.signUp = signUp;
+exports.makeConfirmError = makeConfirmError;
+exports.confirmSignUp = confirmSignUp;
+exports.initiateAuth = initiateAuth;
 /*  Not a pure module */
