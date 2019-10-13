@@ -31,7 +31,6 @@ module type Client = {
     (t, string, Js.Dict.t(Js.Json.t), t, operation, Js.Dict.t(Js.Json.t)) =>
     Future.t(Belt.Result.t(response, [< error]));
 };
-
 module Client = {
   // In the end we really prefer a generic client interface, probably more
   // generic than this one.  Why?  So we can plug out the implmentation
@@ -95,7 +94,7 @@ module Client = {
     ->Future.flatMapOk(apiResponse =>
         Fetch.Response.json(apiResponse)
         ->FutureJs.fromPromise(err => `CognitoJsonParseError(err))
-        ->Future.flatMapOk(json => {
+        ->Future.mapOk(json => {
             let status =
               switch (Fetch.Response.status(apiResponse)) {
               | code when code < 200 => Informational(code)
@@ -104,7 +103,7 @@ module Client = {
               | code when code >= 400 && code < 500 => ClientError(code)
               | code => ServerError(code)
               };
-            Future.make(resolve => resolve(Belt.Result.Ok({status, json})));
+            {status, json};
           })
       );
   };
@@ -116,26 +115,78 @@ let jsonMapString = arr =>
     arr,
   );
 
-type signUpErrors = [
-  | `CognitoUnknownError(string)
-  | `CognitoCodeDeliveryFailure(string)
-  | `CognitoInternalError(string)
-  | `CognitoInvalidEmailRoleAccessPolicy(string)
-  | `CognitoInvalidLambdaResponse(string)
-  | `CognitoInvalidParameter(string)
-  | `CognitoInvalidPassword(string)
-  | `CognitoInvalidSmsRoleAccessPolicys(string)
-  | `CognitoInvalidSmsRoleTrustRelationship(string)
-  | `CognitoNotAuthorized(string)
-  | `CognitoResourceNotFound(string)
-  | `CognitoTooManyRequests(string)
-  | `CognitoUnexpectedLambda(string)
-  | `CognitoUserLambdaValidation(string)
-  | `CognitoUsernameExists(string)
-  | `CognitoConfirmationCodeValidation(string)
-];
-let makeSignUpError = (err, msg) =>
-  switch (err) {
+let parseCognitoError = err =>
+  switch (Js.Json.decodeObject(err)) {
+  | Some(envelope) =>
+    switch (
+      Js.Dict.get(envelope, "__type"),
+      Js.Dict.get(envelope, "message"),
+    ) {
+    | (Some(type_), Some(msg)) =>
+      switch (Js.Json.decodeString(type_), Js.Json.decodeString(msg)) {
+      | (Some(__type), Some(message)) => Some({__type, message})
+      | _ => None
+      }
+    | _ => None
+    }
+  | None => None
+  };
+
+let makeSignupResponse = json => {
+  switch (Js.Json.decodeObject(json)) {
+  | Some(env) =>
+    switch (
+      Js.Dict.get(env, "UserConfirmed"),
+      Js.Dict.get(env, "UserSub"),
+      Js.Dict.get(env, "CodeDeliveryDetails"),
+    ) {
+    | (Some(confirmed), Some(sub), Some(delivery)) =>
+      switch (
+        Js.Json.decodeBoolean(confirmed),
+        Js.Json.decodeString(sub),
+        Js.Json.decodeObject(delivery),
+      ) {
+      | (Some(userConfirmed), Some(userSub), Some(delivery)) =>
+        switch (
+          Js.Dict.get(delivery, "AttributeName"),
+          Js.Dict.get(delivery, "DeliveryMedium"),
+          Js.Dict.get(delivery, "Destination"),
+        ) {
+        | (Some(attrib), Some(medium), Some(dest)) =>
+          switch (
+            Js.Json.decodeString(attrib),
+            Js.Json.decodeString(dest),
+            switch (Js.Json.decodeString(medium)) {
+            | Some(medium) when medium == "EMAIL" => Email
+            | Some(medium) when medium == "SMS" => SMS
+            | Some(_)
+            | None => UnknownDeliveryMedium
+            },
+          ) {
+          | (Some(attributeName), Some(destination), deliveryMedium) =>
+            Some({
+              userSub,
+              userConfirmed,
+              codeDeliveryDetails: {
+                attributeName,
+                deliveryMedium,
+                destination,
+              },
+            })
+          | _ => None
+          }
+        | _ => None
+        }
+      | _ => None
+      }
+    | _ => None
+    }
+  | None => None
+  };
+};
+
+let makeSignupErrorVariant = ({__type, message: msg}) =>
+  switch (__type) {
   | "InvalidParameterException" => `CognitoInvalidParameter(msg)
   | "UsernameExistsException" => `CognitoUsernameExists(msg)
   | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(msg)
@@ -170,40 +221,25 @@ let signUp =
 
   Client.request(config, SignUp, payload)
   ->Future.flatMapOk(res =>
-      switch (res.status) {
-      | Success(_) =>
-        // We're _really_ hoping amazon holds to their API contract here.
-        // If not, we're going to see null type errors.
-
-        let signUpResponse = makeSignupResponse(res);
-        let cddDecoder = signUpResponse->codeDeliveryDetailsDecoderGet;
-        let codeDeliveryDetails = {
-          attributeName: cddDecoder->attributeNameGet,
-          deliveryMedium:
-            cddDecoder->deliveryMediumGet === "EMAIL" ? Email : SMS,
-          destination: cddDecoder->destinationGet,
-        };
-        Future.make(resolve =>
-          resolve(
-            Belt.Result.Ok({
-              codeDeliveryDetails,
-              userConfirmed: signUpResponse->userConfirmedGet,
-              userSub: signUpResponse->userSubGet,
-            }),
+      Future.value(
+        switch (res.status) {
+        | Success(_) =>
+          switch (makeSignupResponse(res.json)) {
+          | Some(result) => Belt.Result.Ok(result)
+          | None => Belt.Result.Error(`CognitoDeserializeError(res.json))
+          }
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(
+            switch (parseCognitoError(res.json)) {
+            | Some(err) => makeSignupErrorVariant(err)
+            | None => `CognitoDeserializeError(res.json)
+            },
           )
-        );
-      | Informational(_)
-      | Redirect(_)
-      | ClientError(_)
-      | ServerError(_) =>
-        // We're _really_ hoping amazon holds to their API contract here too.
-        // Although the unknownerror variant helps lots.
-        let isErrorResponse = makeResponse(res.json);
-        let err = isErrorResponse->__typeGet;
-        let msg = isErrorResponse->messageGet;
-        let err = makeSignUpError(err, msg);
-        Future.make(resolve => resolve(Belt.Result.Error(err)));
-      }
+        },
+      )
     );
 };
 type confirmSignUpErrors = [
@@ -250,36 +286,26 @@ let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
 
   Client.request(config, ConfirmSignUp, params)
   ->Future.flatMapOk(res =>
-      switch (res.status) {
-      | Success(_) =>
-        // We're _really_ hoping amazon holds to their API contract here.
-        // If not, we're going to see null type errors.
-        Future.make(resolve =>
-          resolve(
-            Belt.Result.Ok(
-              {
-                res;
-              },
-            ),
+      Future.value(
+        switch (res.status) {
+        | Success(_) => Belt.Result.Ok(res)
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(
+            switch (parseCognitoError(res.json)) {
+            | Some(err) => makeConfirmError(err.__type, err.message)
+            | None => `CognitoDeserializeError(res.json)
+            },
           )
-        )
-      | Informational(_)
-      | Redirect(_)
-      | ClientError(_)
-      | ServerError(_) =>
-        // We're _really_ hoping amazon holds to their API contract here too.
-        // Although the unknownerror variant helps lots.
-        let isErrorResponse = makeResponse(res.json);
-        let err = isErrorResponse->__typeGet;
-        let msg = isErrorResponse->messageGet;
-        let err = makeConfirmError(err, msg);
-
-        Future.make(resolve => resolve(Belt.Result.Error(err)));
-      }
+        },
+      )
     );
 };
 
 type signInExceptions = [ | `NotAuthorizedException(string)];
+
 let initiateAuth = (config, ~username: string, ~password: string, ()) => {
   let authParams = Js.Dict.empty();
   Js.Dict.set(authParams, "USERNAME", Js.Json.string(username));
@@ -290,43 +316,42 @@ let initiateAuth = (config, ~username: string, ~password: string, ()) => {
   Js.Dict.set(params, "AuthFlow", Js.Json.string("USER_PASSWORD_AUTH"));
   Client.request(config, InitiateAuth, params)
   ->Future.flatMapOk(res =>
-      switch (res.status) {
-      | Success(_) =>
-        // We're _really_ hoping amazon holds to their API contract here.
-        // If not, we're going to see null type errors.
-        let signInResponse = makeSignInResponse(res);
-        let authDecoder = signInResponse->authenticationResultDecoderGet;
-        let authenticationResult = {
-          accessToken: authDecoder->accessTokenGet,
-          idToken: authDecoder->idTokenGet,
-          refreshToken: authDecoder->refreshTokenGet,
-          tokenType: authDecoder->tokenTypeGet,
-          expiresIn: authDecoder->expiresInGet,
-        };
-        Future.make(resolve =>
-          resolve(
-            Belt.Result.Ok({
-              authenticationResult,
-              challengeParameters: signInResponse->challengeParametersGet,
-            }),
-          )
-        );
-      | Informational(_)
-      | Redirect(_)
-      | ClientError(_)
-      | ServerError(_) =>
-        // We're _really_ hoping amazon holds to their API contract here too.
-        // Although the unknownerror variant helps lots.
-        let isErrorResponse = makeResponse(res.json);
-        let err = isErrorResponse->__typeGet;
-        let msg = isErrorResponse->messageGet;
-        let err =
-          switch (err) {
-          | "InvalidParameterException" => `CognitoInvalidParameter(msg)
-          | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
-          | _ => `CognitoUnknownError(msg)
+      Future.value(
+        switch (res.status) {
+        | Success(_) =>
+          // We're _really_ hoping amazon holds to their API contract here.
+          // If not, we're going to see null type errors.
+          let signInResponse = makeSignInResponse(res);
+          let authDecoder = signInResponse->authenticationResultDecoderGet;
+          let authenticationResult = {
+            accessToken: authDecoder->accessTokenGet,
+            idToken: authDecoder->idTokenGet,
+            refreshToken: authDecoder->refreshTokenGet,
+            tokenType: authDecoder->tokenTypeGet,
+            expiresIn: authDecoder->expiresInGet,
           };
-        Future.make(resolve => resolve(Belt.Result.Error(err)));
-      }
+          Belt.Result.Ok({
+            authenticationResult,
+            challengeParameters: signInResponse->challengeParametersGet,
+          });
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(
+            parseCognitoError(res.json)
+            ->Belt.Option.mapWithDefault(
+                `CognitoUnknownError("temp error"), err =>
+                switch (err.__type) {
+                | "InvalidParameterException" =>
+                  `CognitoInvalidParameter(err.message)
+                | "NotAuthorizedException" =>
+                  `CognitoNotAuthorized(err.message)
+                | _ => `CognitoUnknownError(err.message)
+                }
+              ),
+          )
+        },
+      )
     );
 };

@@ -5,7 +5,7 @@
     "clean": "bsb -clean-world",
     "build": "bsb -make-world",
     "start": "bsb -make-world -w",
-    "test": "echo \"Error, no tests!!!!!\"",
+    "test": "node src/Scratch.bs.js",
     "ci": "yarn build && yarn test"
   },
   "keywords": [
