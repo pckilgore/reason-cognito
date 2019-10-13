@@ -2,6 +2,30 @@
 'use strict';
 
 
+function makeOperationString(param) {
+  switch (param) {
+    case /* SignUp */0 :
+        return "SignUp";
+    case /* SignIn */1 :
+        return "SignIn";
+    case /* SignOut */2 :
+        return "SignOut";
+    case /* ConfirmSignUp */3 :
+        return "ConfirmSignUp";
+    case /* ChangePassword */4 :
+        return "ChangePassword";
+    case /* RespondToAuthChallenge */5 :
+        return "RespondToAuthChallenge";
+    case /* ForgotPassword */6 :
+        return "ForgotPassword";
+    case /* ConfirmForgotPassword */7 :
+        return "ConfirmForgotPassword";
+    case /* InitiateAuth */8 :
+        return "InitiateAuth";
+    
+  }
+}
+
 function makeRegionString(param) {
   switch (param) {
     case /* UsEast1 */0 :
@@ -31,5 +55,6 @@ function makeRegionString(param) {
   }
 }
 
+exports.makeOperationString = makeOperationString;
 exports.makeRegionString = makeRegionString;
 /* No side effect */

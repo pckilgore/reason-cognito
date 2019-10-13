@@ -3,12 +3,13 @@
 
 var $$Array = require("bs-platform/lib/js/array.js");
 var Block = require("bs-platform/lib/js/block.js");
-var Curry = require("bs-platform/lib/js/curry.js");
 var Fetch = require("bs-fetch/src/Fetch.js");
 var Types = require("./Types.bs.js");
 var Future = require("reason-future/src/Future.bs.js");
 var Js_dict = require("bs-platform/lib/js/js_dict.js");
+var Js_json = require("bs-platform/lib/js/js_json.js");
 var FutureJs = require("reason-future/src/FutureJs.bs.js");
+var Belt_Option = require("bs-platform/lib/js/belt_Option.js");
 var Caml_option = require("bs-platform/lib/js/caml_option.js");
 
 ((require('isomorphic-fetch')));
@@ -25,7 +26,7 @@ function makeConfig(poolId, clientId, region, $staropt$star, param) {
 
 function request(config, operation, params) {
   var headers = { };
-  var target = "AWSCognitoIdentityProviderService." + operation;
+  var target = "AWSCognitoIdentityProviderService." + Types.makeOperationString(operation);
   headers["X-Amz-Target"] = target;
   headers["Content-Type"] = "application/x-amz-json-1.1";
   headers["X-Amz-User-Agent"] = "reason-cognito/0.1.x js";
@@ -36,7 +37,7 @@ function request(config, operation, params) {
                             fetchError
                           ];
                   })), (function (apiResponse) {
-                return Future.flatMapOk(FutureJs.fromPromise(apiResponse.json(), (function (err) {
+                return Future.mapOk(FutureJs.fromPromise(apiResponse.json(), (function (err) {
                                   return /* `CognitoJsonParseError */[
                                           -159238450,
                                           err
@@ -50,12 +51,10 @@ function request(config, operation, params) {
                                         )
                                     )
                                 );
-                              return Future.make((function (resolve) {
-                                            return Curry._1(resolve, /* Ok */Block.__(0, [/* record */[
-                                                            /* status */status,
-                                                            /* json */json
-                                                          ]]));
-                                          }));
+                              return /* record */[
+                                      /* status */status,
+                                      /* json */json
+                                    ];
                             }));
               }));
 }
@@ -72,6 +71,166 @@ function jsonMapString(arr) {
               }), arr);
 }
 
+function parseCognitoError(err) {
+  var match = Js_json.decodeObject(err);
+  if (match !== undefined) {
+    var envelope = Caml_option.valFromOption(match);
+    var match$1 = Js_dict.get(envelope, "__type");
+    var match$2 = Js_dict.get(envelope, "message");
+    if (match$1 !== undefined && match$2 !== undefined) {
+      var match$3 = Js_json.decodeString(Caml_option.valFromOption(match$1));
+      var match$4 = Js_json.decodeString(Caml_option.valFromOption(match$2));
+      if (match$3 !== undefined && match$4 !== undefined) {
+        return /* record */[
+                /* __type */match$3,
+                /* message */match$4
+              ];
+      } else {
+        return ;
+      }
+    } else {
+      return ;
+    }
+  }
+  
+}
+
+function makeSignupResponse(json) {
+  var match = Js_json.decodeObject(json);
+  if (match !== undefined) {
+    var env = Caml_option.valFromOption(match);
+    var match$1 = Js_dict.get(env, "UserConfirmed");
+    var match$2 = Js_dict.get(env, "UserSub");
+    var match$3 = Js_dict.get(env, "CodeDeliveryDetails");
+    if (match$1 !== undefined && match$2 !== undefined && match$3 !== undefined) {
+      var match$4 = Js_json.decodeBoolean(Caml_option.valFromOption(match$1));
+      var match$5 = Js_json.decodeString(Caml_option.valFromOption(match$2));
+      var match$6 = Js_json.decodeObject(Caml_option.valFromOption(match$3));
+      if (match$4 !== undefined && match$5 !== undefined && match$6 !== undefined) {
+        var delivery = Caml_option.valFromOption(match$6);
+        var match$7 = Js_dict.get(delivery, "AttributeName");
+        var match$8 = Js_dict.get(delivery, "DeliveryMedium");
+        var match$9 = Js_dict.get(delivery, "Destination");
+        if (match$7 !== undefined && match$8 !== undefined && match$9 !== undefined) {
+          var match$10 = Js_json.decodeString(Caml_option.valFromOption(match$7));
+          var match$11 = Js_json.decodeString(Caml_option.valFromOption(match$9));
+          var match$12 = Js_json.decodeString(Caml_option.valFromOption(match$8));
+          var match$13;
+          if (match$12 !== undefined) {
+            var medium = match$12;
+            match$13 = medium === "EMAIL" ? /* Email */0 : (
+                medium === "SMS" ? /* SMS */1 : /* UnknownDeliveryMedium */2
+              );
+          } else {
+            match$13 = /* UnknownDeliveryMedium */2;
+          }
+          if (match$10 !== undefined && match$11 !== undefined) {
+            return /* record */[
+                    /* codeDeliveryDetails : record */[
+                      /* attributeName */match$10,
+                      /* deliveryMedium */match$13,
+                      /* destination */match$11
+                    ],
+                    /* userConfirmed */match$4,
+                    /* userSub */match$5
+                  ];
+          } else {
+            return ;
+          }
+        } else {
+          return ;
+        }
+      } else {
+        return ;
+      }
+    } else {
+      return ;
+    }
+  }
+  
+}
+
+function makeSignupErrorVariant(param) {
+  var msg = param[/* message */1];
+  switch (param[/* __type */0]) {
+    case "CodeDeliveryFailureException" :
+        return /* `CognitoCodeDeliveryFailure */[
+                307717752,
+                msg
+              ];
+    case "InternalErrorException" :
+        return /* `CognitoInternalError */[
+                636052602,
+                msg
+              ];
+    case "InvalidEmailRoleAccessPolicyException" :
+        return /* `CognitoInvalidEmailRoleAccessPolicy */[
+                -320011326,
+                msg
+              ];
+    case "InvalidLambdaResponseException" :
+        return /* `CognitoInvalidLambdaResponse */[
+                -1072578002,
+                msg
+              ];
+    case "InvalidParameterException" :
+        return /* `CognitoInvalidParameter */[
+                -267133469,
+                msg
+              ];
+    case "InvalidPasswordException" :
+        return /* `CognitoInvalidPassword */[
+                -17702879,
+                msg
+              ];
+    case "InvalidSmsRoleAccessPolicysException" :
+        return /* `CognitoInvalidSmsRoleAccessPolicys */[
+                598714580,
+                msg
+              ];
+    case "InvalidSmsRoleTrustRelationshipException" :
+        return /* `CognitoInvalidSmsRoleTrustRelationship */[
+                -198400121,
+                msg
+              ];
+    case "NotAuthorizedException" :
+        return /* `CognitoNotAuthorized */[
+                -1019683139,
+                msg
+              ];
+    case "ResourceNotFoundException" :
+        return /* `CognitoResourceNotFound */[
+                281060686,
+                msg
+              ];
+    case "TooManyRequestsException" :
+        return /* `CognitoTooManyRequests */[
+                165203366,
+                msg
+              ];
+    case "UnexpectedLambdaException" :
+        return /* `CognitoUnexpectedLambda */[
+                -539579927,
+                msg
+              ];
+    case "UserLambdaValidationException" :
+        return /* `CognitoUserLambdaValidation */[
+                1019055420,
+                msg
+              ];
+    case "UsernameExistsException" :
+        return /* `CognitoUsernameExists */[
+                -157849469,
+                msg
+              ];
+    default:
+      return /* `CognitoUnknownError */[
+              -55570033,
+              msg
+            ];
+  }
+}
+
 function signUp(config, username, password, $staropt$star, $staropt$star$1, param) {
   var attributes = $staropt$star !== undefined ? $staropt$star : /* array */[];
   var validationData = $staropt$star$1 !== undefined ? $staropt$star$1 : /* array */[];
@@ -82,131 +241,198 @@ function signUp(config, username, password, $staropt$star, $staropt$star$1, para
   payload["Password"] = password;
   payload["UserAttributes"] = jsonAttribs;
   payload["ValidationData"] = jsonVData;
-  return Future.flatMapOk(request(config, "SignUp", payload), (function (res) {
+  return Future.flatMapOk(request(config, /* SignUp */0, payload), (function (res) {
                 var match = res[/* status */0];
+                var tmp;
                 if (match.tag === /* Success */1) {
-                  var cddDecoder = res.CodeDeliveryDetails;
-                  var match$1 = cddDecoder.DeliveryMedium === "EMAIL";
-                  var codeDeliveryDetails_000 = /* attributeName */cddDecoder.AttributeName;
-                  var codeDeliveryDetails_001 = /* deliveryMedium */match$1 ? /* Email */0 : /* SMS */1;
-                  var codeDeliveryDetails_002 = /* destination */cddDecoder.Destination;
-                  var codeDeliveryDetails = /* record */[
-                    codeDeliveryDetails_000,
-                    codeDeliveryDetails_001,
-                    codeDeliveryDetails_002
-                  ];
-                  return Future.make((function (resolve) {
-                                return Curry._1(resolve, /* Ok */Block.__(0, [/* record */[
-                                                /* codeDeliveryDetails */codeDeliveryDetails,
-                                                /* userConfirmed */res.UserConfirmed,
-                                                /* userSub */res.UserSub
-                                              ]]));
-                              }));
+                  var match$1 = makeSignupResponse(res[/* json */1]);
+                  tmp = match$1 !== undefined ? /* Ok */Block.__(0, [match$1]) : /* Error */Block.__(1, [/* `CognitoDeserializeError */[
+                          713351994,
+                          res[/* json */1]
+                        ]]);
                 } else {
-                  var isErrorResponse = res[/* json */1];
-                  var err = isErrorResponse.__type;
-                  var msg = isErrorResponse.message;
-                  var err$1;
-                  switch (err) {
-                    case "CodeDeliveryFailureException" :
-                        err$1 = /* `CognitoCodeDeliveryFailure */[
-                          307717752,
-                          msg
-                        ];
-                        break;
-                    case "InternalErrorException" :
-                        err$1 = /* `CognitoInternalError */[
-                          636052602,
-                          msg
-                        ];
-                        break;
-                    case "InvalidEmailRoleAccessPolicyException" :
-                        err$1 = /* `CognitoInvalidEmailRoleAccessPolicy */[
-                          -320011326,
-                          msg
-                        ];
-                        break;
-                    case "InvalidLambdaResponseException" :
-                        err$1 = /* `CognitoInvalidLambdaResponse */[
-                          -1072578002,
-                          msg
-                        ];
-                        break;
-                    case "InvalidParameterException" :
-                        err$1 = /* `CognitoInvalidParameter */[
-                          -267133469,
-                          msg
-                        ];
-                        break;
-                    case "InvalidPasswordException" :
-                        err$1 = /* `CognitoInvalidPassword */[
-                          -17702879,
-                          msg
-                        ];
-                        break;
-                    case "InvalidSmsRoleAccessPolicysException" :
-                        err$1 = /* `CognitoInvalidSmsRoleAccessPolicys */[
-                          598714580,
-                          msg
-                        ];
-                        break;
-                    case "InvalidSmsRoleTrustRelationshipException" :
-                        err$1 = /* `CognitoInvalidSmsRoleTrustRelationship */[
-                          -198400121,
-                          msg
-                        ];
-                        break;
-                    case "NotAuthorizedException" :
-                        err$1 = /* `CognitoNotAuthorized */[
-                          -1019683139,
-                          msg
-                        ];
-                        break;
-                    case "ResourceNotFoundException" :
-                        err$1 = /* `CognitoResourceNotFound */[
-                          281060686,
-                          msg
-                        ];
-                        break;
-                    case "TooManyRequestsException" :
-                        err$1 = /* `CognitoTooManyRequests */[
-                          165203366,
-                          msg
-                        ];
-                        break;
-                    case "UnexpectedLambdaException" :
-                        err$1 = /* `CognitoUnexpectedLambda */[
-                          -539579927,
-                          msg
-                        ];
-                        break;
-                    case "UserLambdaValidationException" :
-                        err$1 = /* `CognitoUserLambdaValidation */[
-                          1019055420,
-                          msg
-                        ];
-                        break;
-                    case "UsernameExistsException" :
-                        err$1 = /* `CognitoUsernameExists */[
-                          -157849469,
-                          msg
-                        ];
-                        break;
-                    default:
-                      err$1 = /* `CognitoUnknownError */[
-                        -55570033,
-                        msg
-                      ];
-                  }
-                  return Future.make((function (resolve) {
-                                return Curry._1(resolve, /* Error */Block.__(1, [err$1]));
-                              }));
+                  var match$2 = parseCognitoError(res[/* json */1]);
+                  tmp = /* Error */Block.__(1, [match$2 !== undefined ? makeSignupErrorVariant(match$2) : /* `CognitoDeserializeError */[
+                          713351994,
+                          res[/* json */1]
+                        ]]);
                 }
+                return Future.value(tmp);
+              }));
+}
+
+function makeConfirmError(err, msg) {
+  switch (err) {
+    case "AliasExistsException" :
+        return /* `CognitoAliasExists */[
+                -498244869,
+                msg
+              ];
+    case "CodeMismatchException" :
+        return /* `CognitoCodeMismatch */[
+                -817363892,
+                msg
+              ];
+    case "ExpiredCodeException" :
+        return /* `CognitoExpiredCode */[
+                -64788767,
+                msg
+              ];
+    case "InternalErrorException" :
+        return /* `CognitoInternalError */[
+                636052602,
+                msg
+              ];
+    case "InvalidLambdaResponseException" :
+        return /* `CognitoInvalidLambda */[
+                -469073267,
+                msg
+              ];
+    case "InvalidParameterException" :
+        return /* `CognitoInvalidParameter */[
+                -267133469,
+                msg
+              ];
+    case "LimitExceededException" :
+        return /* `CognitoLimitExceeded */[
+                767083101,
+                msg
+              ];
+    case "NotAuthorizedException" :
+        return /* `CognitoNotAuthorized */[
+                -1019683139,
+                msg
+              ];
+    case "ResourceNotFoundException" :
+        return /* `CognitoResourceNotFound */[
+                281060686,
+                msg
+              ];
+    case "TooManyFailedAttemptsException" :
+        return /* `CognitoTooManyFailedAttempts */[
+                261105285,
+                msg
+              ];
+    case "TooManyRequestsException" :
+        return /* `CognitoTooManyRequests */[
+                165203366,
+                msg
+              ];
+    case "UnexpectedLambdaException" :
+        return /* `CognitoUnexpectedLambda */[
+                -539579927,
+                msg
+              ];
+    case "UserLambdaValidationException" :
+        return /* `CognitoUserLambdaValidation */[
+                1019055420,
+                msg
+              ];
+    case "UserNotFoundException" :
+        return /* `CognitoUserNotFound */[
+                376697675,
+                msg
+              ];
+    default:
+      return /* `CognitoUnknownError */[
+              -55570033,
+              msg
+            ];
+  }
+}
+
+function confirmSignUp(config, username, confirmationCode, param) {
+  var params = { };
+  params["Username"] = username;
+  params["ConfirmationCode"] = confirmationCode;
+  return Future.flatMapOk(request(config, /* ConfirmSignUp */3, params), (function (res) {
+                var match = res[/* status */0];
+                var tmp;
+                if (match.tag === /* Success */1) {
+                  tmp = /* Ok */Block.__(0, [res]);
+                } else {
+                  var match$1 = parseCognitoError(res[/* json */1]);
+                  var tmp$1;
+                  if (match$1 !== undefined) {
+                    var err = match$1;
+                    tmp$1 = makeConfirmError(err[/* __type */0], err[/* message */1]);
+                  } else {
+                    tmp$1 = /* `CognitoDeserializeError */[
+                      713351994,
+                      res[/* json */1]
+                    ];
+                  }
+                  tmp = /* Error */Block.__(1, [tmp$1]);
+                }
+                return Future.value(tmp);
+              }));
+}
+
+function initiateAuth(config, username, password, param) {
+  var authParams = { };
+  authParams["USERNAME"] = username;
+  authParams["PASSWORD"] = password;
+  var params = { };
+  params["AuthParameters"] = authParams;
+  params["AuthFlow"] = "USER_PASSWORD_AUTH";
+  return Future.flatMapOk(request(config, /* InitiateAuth */8, params), (function (res) {
+                var match = res[/* status */0];
+                var tmp;
+                if (match.tag === /* Success */1) {
+                  var authDecoder = res.AuthenticationResult;
+                  var authenticationResult_000 = /* accessToken */authDecoder.AccessToken;
+                  var authenticationResult_001 = /* expiresIn */authDecoder.ExpiresIn;
+                  var authenticationResult_002 = /* idToken */authDecoder.IdToken;
+                  var authenticationResult_003 = /* refreshToken */authDecoder.RefreshToken;
+                  var authenticationResult_004 = /* tokenType */authDecoder.TokenType;
+                  var authenticationResult = /* record */[
+                    authenticationResult_000,
+                    authenticationResult_001,
+                    authenticationResult_002,
+                    authenticationResult_003,
+                    authenticationResult_004
+                  ];
+                  tmp = /* Ok */Block.__(0, [/* record */[
+                        /* authenticationResult */authenticationResult,
+                        /* challengeParameters */res.ChallengeParameters
+                      ]]);
+                } else {
+                  tmp = /* Error */Block.__(1, [Belt_Option.mapWithDefault(parseCognitoError(res[/* json */1]), /* `CognitoUnknownError */[
+                            -55570033,
+                            "temp error"
+                          ], (function (err) {
+                              var match = err[/* __type */0];
+                              switch (match) {
+                                case "InvalidParameterException" :
+                                    return /* `CognitoInvalidParameter */[
+                                            -267133469,
+                                            err[/* message */1]
+                                          ];
+                                case "NotAuthorizedException" :
+                                    return /* `CognitoNotAuthorized */[
+                                            -1019683139,
+                                            err[/* message */1]
+                                          ];
+                                default:
+                                  return /* `CognitoUnknownError */[
+                                          -55570033,
+                                          err[/* message */1]
+                                        ];
+                              }
+                            }))]);
+                }
+                return Future.value(tmp);
               }));
 }
 
 exports.makeConfig = makeConfig;
 exports.Client = Client;
 exports.jsonMapString = jsonMapString;
+exports.parseCognitoError = parseCognitoError;
+exports.makeSignupResponse = makeSignupResponse;
+exports.makeSignupErrorVariant = makeSignupErrorVariant;
 exports.signUp = signUp;
+exports.makeConfirmError = makeConfirmError;
+exports.confirmSignUp = confirmSignUp;
+exports.initiateAuth = initiateAuth;
 /*  Not a pure module */
