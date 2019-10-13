@@ -32,26 +32,6 @@ let makeRegionString =
   | EuWest1 => "eu-west-1"
   | EuWest2 => "eu-west-2";
 
-[@bs.deriving abstract]
-type codeDeliveryDetailsDecoder = {
-  [@bs.as "AttributeName"]
-  attributeName: string,
-  [@bs.as "DeliveryMedium"]
-  deliveryMedium: string,
-  [@bs.as "Destination"]
-  destination: string,
-};
-
-[@bs.deriving abstract]
-type signUpResponseDecoder = {
-  [@bs.as "CodeDeliveryDetails"]
-  codeDeliveryDetailsDecoder,
-  [@bs.as "UserConfirmed"]
-  userConfirmed: bool,
-  [@bs.as "UserSub"]
-  userSub: string,
-};
-
 type signUpResponse = {
   codeDeliveryDetails,
   userConfirmed: bool,
@@ -64,13 +44,29 @@ and codeDeliveryDetails = {
 }
 and deliveryMedium =
   | Email
-  | SMS;
+  | SMS
+  | UnknownDeliveryMedium;
 
-[@bs.deriving abstract]
-type amznErrResponse = {
+type rawCognitoError = {
   __type: string,
   message: string,
 };
 
-external makeSignupResponse: 't => signUpResponseDecoder = "%identity";
-external makeResponse: Js.Json.t => amznErrResponse = "%identity";
+type signUpErrors = [
+  | `CognitoUnknownError(string)
+  | `CognitoCodeDeliveryFailure(string)
+  | `CognitoInternalError(string)
+  | `CognitoInvalidEmailRoleAccessPolicy(string)
+  | `CognitoInvalidLambdaResponse(string)
+  | `CognitoInvalidParameter(string)
+  | `CognitoInvalidPassword(string)
+  | `CognitoInvalidSmsRoleAccessPolicys(string)
+  | `CognitoInvalidSmsRoleTrustRelationship(string)
+  | `CognitoNotAuthorized(string)
+  | `CognitoResourceNotFound(string)
+  | `CognitoTooManyRequests(string)
+  | `CognitoUnexpectedLambda(string)
+  | `CognitoUserLambdaValidation(string)
+  | `CognitoUsernameExists(string)
+  | `CognitoDeserializeError(Js.Json.t)
+];
