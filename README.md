@@ -1,5 +1,38 @@
 # reason-cognito
-A work in progress.
+
+This library is a work in progress!
+
+## Development outline
+
+MVP Development Path:
+
+A. Bucklescript Only
+
+1. [ ] Client Operations
+   - [ ] SignUp
+   - [ ] Confirm SignUp
+   - [ ] Signin
+     - [ ] Password Flow
+     - [ ] SRP Flow
+   - [ ] SignOut
+   - [ ] Change Password
+   - [ ] Reset Password
+2. [ ] Modularization
+   - [ ] Identify Sharable Core
+   - [ ] Extract to Separte Modules
+   - [ ] Remove all Bucklescript Dependencies from Core
+   - [ ] Consume core (tightly bound by bs module)
+
+B. High Level Library
+
+1. [ ] Storage Layer
+2. [ ] ReasonReact hooks
+
+C. Ocaml/Native
+
+1. [ ] Consume Core for Native (tighly bound)
+2. ???
+3. [ ] Consume Core for Native (injected Dependencies)
 
 # Build
 
@@ -16,4 +49,3 @@ npm run watch
 # Editor
 
 If you use `vscode`, Press `Windows + Shift + B` it will build automatically# reason-cognito
-
