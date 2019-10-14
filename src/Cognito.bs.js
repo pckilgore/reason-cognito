@@ -61,17 +61,24 @@ var Client = {
   request: request
 };
 
-function signUp(config, username, password, $staropt$star, $staropt$star$1, param) {
+function signUp(config, username, password, $staropt$star, $staropt$star$1, analyticsEndpointId, clientMetadata, secretHash, param) {
   var attributes = $staropt$star !== undefined ? $staropt$star : /* array */[];
   var validationData = $staropt$star$1 !== undefined ? $staropt$star$1 : /* array */[];
-  var jsonAttribs = Serde.jsonMapString(attributes);
-  var jsonVData = Serde.jsonMapString(validationData);
-  var payload = { };
-  payload["Username"] = username;
-  payload["Password"] = password;
-  payload["UserAttributes"] = jsonAttribs;
-  payload["ValidationData"] = jsonVData;
-  return Future.flatMapOk(request(config, /* SignUp */0, payload), (function (res) {
+  var params = { };
+  if (analyticsEndpointId !== undefined) {
+    params["AnalyticsMetadata"] = Caml_option.valFromOption(analyticsEndpointId);
+  }
+  if (clientMetadata !== undefined) {
+    params["ClientMetadata"] = Caml_option.valFromOption(clientMetadata);
+  }
+  params["Password"] = password;
+  if (secretHash !== undefined) {
+    params["SecretHash"] = secretHash;
+  }
+  params["UserAttributes"] = Serde.jsonMapString(attributes);
+  params["Username"] = username;
+  params["ValidationData"] = Serde.jsonMapString(validationData);
+  return Future.flatMapOk(request(config, /* SignUp */0, params), (function (res) {
                 var match = res[/* status */0];
                 var tmp;
                 if (match.tag === /* Success */1) {

@@ -111,18 +111,74 @@ module Client = {
 };
 
 let signUp =
-    (config, ~username, ~password, ~attributes=[||], ~validationData=[||], ()) => {
-  // Map attrib arrays into JSON form.
-  let jsonAttribs = jsonMapString(attributes);
-  let jsonVData = jsonMapString(validationData);
+    (
+      config,
+      ~username,
+      ~password,
+      ~attributes=[||],
+      ~validationData=[||],
+      ~analyticsEndpointId=?,
+      ~clientMetadata=?,
+      ~secretHash=?,
+      (),
+    ) => {
+  // https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_SignUp.html
 
-  let payload = Js.Dict.empty();
-  Js.Dict.set(payload, "Username", Js.Json.string(username));
-  Js.Dict.set(payload, "Password", Js.Json.string(password));
-  Js.Dict.set(payload, "UserAttributes", Js.Json.objectArray(jsonAttribs));
-  Js.Dict.set(payload, "ValidationData", Js.Json.objectArray(jsonVData));
+  // {
+  let params = Js.Dict.empty();
+  //   "AnalyticsMetadata": {
+  //     "AnalyticsEndpointId": "string",
+  //   },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+  //   "ClientId": "string", <- from client config
 
-  Client.request(config, SignUp, payload)
+  //   "ClientMetadata": {
+  //     "string": "string",
+  //   },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  //   "Password": "string",
+  Js.Dict.set(params, "Password", Js.Json.string(password));
+
+  //   "SecretHash": "string",
+  switch (secretHash) {
+  | Some(secretHash) =>
+    Js.Dict.set(params, "SecretHash", Js.Json.boolean(secretHash))
+  | None => ()
+  };
+
+  //   "UserAttributes": [{"Name": "string", "Value": "string"}],
+  Js.Dict.set(
+    params,
+    "UserAttributes",
+    jsonMapString(attributes)->Js.Json.objectArray,
+  );
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  /* ^^ADVANCED SECURITY UNIMPLEMENTED^*/
+
+  //   "Username": "string",
+  Js.Dict.set(params, "Username", Js.Json.string(username));
+
+  //   "ValidationData": [{"Name": "string", "Value": "string"}],
+  Js.Dict.set(
+    params,
+    "ValidationData",
+    jsonMapString(validationData)->Js.Json.objectArray,
+  );
+  // };
+
+  Client.request(config, SignUp, params)
   ->Future.flatMapOk(res =>
       Future.value(
         switch (res.status) {
@@ -159,9 +215,8 @@ let confirmSignUp =
     ) => {
   // https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_ConfirmSignUp.html
 
-  // Request:
-  let params = Js.Dict.empty();
   // {
+  let params = Js.Dict.empty();
   //   "AnalyticsMetadata": {
   //     "AnalyticsEndpointId": "string",
   //   },
@@ -169,6 +224,9 @@ let confirmSignUp =
   | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
   | None => ()
   };
+
+  //   "ClientId": "string", <- from client config
+
   //   "ClientMetadata": {
   //     "string": "string",
   //   },
@@ -194,11 +252,13 @@ let confirmSignUp =
     Js.Dict.set(params, "SecretHash", Js.Json.boolean(secretHash))
   | None => ()
   };
+
   // ==ADVANCED SECURITY UNIMPLEMENTED==
   //   "UserContextData": {
   //     "EncodedData": "string",
   //   },
   // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+
   //   "Username": "string",
   Js.Dict.set(params, "Username", Js.Json.string(username));
   // };
