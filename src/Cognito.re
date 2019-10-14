@@ -20,10 +20,7 @@ let makeConfig =
 };
 
 module type Client = {
-  type error = [
-    | `CognitoClientError(Js.Promise.error)
-    | `CognitoJsonParseError(Js.Promise.error)
-  ];
+  type error = [ | `ReasonCognitoClientError(Js.Promise.error)];
   type response = {
     status: int,
     json: Js.Json.t,
@@ -53,11 +50,7 @@ module Client = {
   // library.  Because polymorphic variants are GLOBAL, we use highly
   // descriptive names.  Because we are lazy, we are mostly passing along
   // Js.Promise.Error here, to give end-users maximum handling flexibility.
-  type error = [
-    | `CognitoClientError(Js.Promise.error)
-    | `CognitoJsonParseError(Js.Promise.error)
-    | `CognitoApiError(response)
-  ];
+  type error = [ | `ReasonCognitoClientError(Js.Promise.error)];
 
   // Request's purpose is to
   // talk to the network and pass a JSON blob back to its caller if
@@ -90,11 +83,13 @@ module Client = {
       ),
     )
     // Error = fetch did not do anything.
-    ->FutureJs.fromPromise(fetchError => `CognitoClientError(fetchError))
+    ->FutureJs.fromPromise(fetchError =>
+        `ReasonCognitoClientError(fetchError)
+      )
     // OK = fetch did something. Map result to easily consumable type.
     ->Future.flatMapOk(apiResponse =>
         Fetch.Response.json(apiResponse)
-        ->FutureJs.fromPromise(err => `CognitoJsonParseError(err))
+        ->FutureJs.fromPromise(err => `ReasonCognitoClientError(err))
         ->Future.mapOk(json => {
             let status =
               switch (Fetch.Response.status(apiResponse)) {

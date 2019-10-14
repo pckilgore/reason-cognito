@@ -30,14 +30,14 @@ function request(config, operation, params) {
   headers["X-Amz-User-Agent"] = "reason-cognito/0.1.x js";
   params["ClientId"] = config[/* clientId */1];
   return Future.flatMapOk(FutureJs.fromPromise(fetch(config[/* endpoint */2], Fetch.RequestInit.make(/* Post */2, Caml_option.some(headers), Caml_option.some(JSON.stringify(params)), undefined, undefined, /* NoCORS */2, undefined, /* NoCache */3, undefined, undefined, undefined)(/* () */0)), (function (fetchError) {
-                    return /* `CognitoClientError */[
-                            -332319508,
+                    return /* `ReasonCognitoClientError */[
+                            -291143216,
                             fetchError
                           ];
                   })), (function (apiResponse) {
                 return Future.mapOk(FutureJs.fromPromise(apiResponse.json(), (function (err) {
-                                  return /* `CognitoJsonParseError */[
-                                          -159238450,
+                                  return /* `ReasonCognitoClientError */[
+                                          -291143216,
                                           err
                                         ];
                                 })), (function (json) {
