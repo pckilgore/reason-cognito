@@ -83,16 +83,12 @@ function signUp(config, username, password, $staropt$star, $staropt$star$1, anal
                 var tmp;
                 if (match.tag === /* Success */1) {
                   var match$1 = Serde.makeSignupResponse(res[/* json */1]);
-                  tmp = match$1 !== undefined ? /* Ok */Block.__(0, [match$1]) : /* Error */Block.__(1, [/* `CognitoDeserializeError */[
-                          713351994,
+                  tmp = match$1 !== undefined ? /* Ok */Block.__(0, [match$1]) : /* Error */Block.__(1, [/* `ReasonCognitoSerdeError */[
+                          521507828,
                           res[/* json */1]
                         ]]);
                 } else {
-                  var match$2 = Serde.parseCognitoError(res[/* json */1]);
-                  tmp = /* Error */Block.__(1, [match$2 !== undefined ? Types.makeSignupErrorVariant(match$2) : /* `CognitoDeserializeError */[
-                          713351994,
-                          res[/* json */1]
-                        ]]);
+                  tmp = /* Error */Block.__(1, [Serde.makeErrKind(res[/* json */1], Types.makeSignUpErrors)]);
                 }
                 return Future.value(tmp);
               }));
@@ -116,22 +112,7 @@ function confirmSignUp(config, username, confirmationCode, $staropt$star, secret
   return Future.flatMapOk(request(config, /* ConfirmSignUp */3, params), (function (res) {
                 var match = res[/* status */0];
                 var tmp;
-                if (match.tag === /* Success */1) {
-                  tmp = /* Ok */Block.__(0, [/* () */0]);
-                } else {
-                  var match$1 = Serde.parseCognitoError(res[/* json */1]);
-                  var tmp$1;
-                  if (match$1 !== undefined) {
-                    var err = match$1;
-                    tmp$1 = Types.makeConfirmError(err[/* __type */0], err[/* message */1]);
-                  } else {
-                    tmp$1 = /* `CognitoDeserializeError */[
-                      713351994,
-                      res[/* json */1]
-                    ];
-                  }
-                  tmp = /* Error */Block.__(1, [tmp$1]);
-                }
+                tmp = match.tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Serde.makeErrKind(res[/* json */1], Types.makeConfirmSignUpErrors)]);
                 return Future.value(tmp);
               }));
 }

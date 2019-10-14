@@ -185,18 +185,13 @@ let signUp =
         | Success(_) =>
           switch (makeSignupResponse(res.json)) {
           | Some(result) => Belt.Result.Ok(result)
-          | None => Belt.Result.Error(`CognitoDeserializeError(res.json))
+          | None => Belt.Result.Error(`ReasonCognitoSerdeError(res.json))
           }
         | Informational(_)
         | Redirect(_)
         | ClientError(_)
         | ServerError(_) =>
-          Belt.Result.Error(
-            switch (parseCognitoError(res.json)) {
-            | Some(err) => makeSignupErrorVariant(err)
-            | None => `CognitoDeserializeError(res.json)
-            },
-          )
+          Belt.Result.Error(res.json->makeErrKind(makeSignUpErrors))
         },
       )
     );
@@ -272,12 +267,7 @@ let confirmSignUp =
         | Redirect(_)
         | ClientError(_)
         | ServerError(_) =>
-          Belt.Result.Error(
-            switch (parseCognitoError(res.json)) {
-            | Some(err) => makeConfirmError(err.__type, err.message)
-            | None => `CognitoDeserializeError(res.json)
-            },
-          )
+          Belt.Result.Error(res.json->makeErrKind(makeConfirmSignUpErrors))
         },
       )
     );

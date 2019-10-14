@@ -55,169 +55,143 @@ function makeRegionString(param) {
   }
 }
 
-function makeSignupErrorVariant(param) {
-  var msg = param[/* message */1];
+function makeAwsGenericErrors(param) {
+  var message = param[/* message */1];
   switch (param[/* __type */0]) {
-    case "CodeDeliveryFailureException" :
-        return /* `CognitoCodeDeliveryFailure */[
-                307717752,
-                msg
-              ];
     case "InternalErrorException" :
         return /* `CognitoInternalError */[
                 636052602,
-                msg
-              ];
-    case "InvalidEmailRoleAccessPolicyException" :
-        return /* `CognitoInvalidEmailRoleAccessPolicy */[
-                -320011326,
-                msg
+                message
               ];
     case "InvalidLambdaResponseException" :
         return /* `CognitoInvalidLambdaResponse */[
                 -1072578002,
-                msg
+                message
               ];
     case "InvalidParameterException" :
         return /* `CognitoInvalidParameter */[
                 -267133469,
-                msg
-              ];
-    case "InvalidPasswordException" :
-        return /* `CognitoInvalidPassword */[
-                -17702879,
-                msg
-              ];
-    case "InvalidSmsRoleAccessPolicysException" :
-        return /* `CognitoInvalidSmsRoleAccessPolicys */[
-                598714580,
-                msg
-              ];
-    case "InvalidSmsRoleTrustRelationshipException" :
-        return /* `CognitoInvalidSmsRoleTrustRelationship */[
-                -198400121,
-                msg
+                message
               ];
     case "NotAuthorizedException" :
         return /* `CognitoNotAuthorized */[
                 -1019683139,
-                msg
+                message
               ];
     case "ResourceNotFoundException" :
         return /* `CognitoResourceNotFound */[
                 281060686,
-                msg
+                message
               ];
     case "TooManyRequestsException" :
         return /* `CognitoTooManyRequests */[
                 165203366,
-                msg
+                message
               ];
     case "UnexpectedLambdaException" :
         return /* `CognitoUnexpectedLambda */[
                 -539579927,
-                msg
+                message
               ];
     case "UserLambdaValidationException" :
         return /* `CognitoUserLambdaValidation */[
                 1019055420,
-                msg
-              ];
-    case "UsernameExistsException" :
-        return /* `CognitoUsernameExists */[
-                -157849469,
-                msg
+                message
               ];
     default:
-      return /* `CognitoUnknownError */[
-              -55570033,
-              msg
-            ];
+      return ;
   }
 }
 
-function makeConfirmError(err, msg) {
-  switch (err) {
-    case "AliasExistsException" :
-        return /* `CognitoAliasExists */[
-                -498244869,
-                msg
-              ];
-    case "CodeMismatchException" :
-        return /* `CognitoCodeMismatch */[
-                -817363892,
-                msg
-              ];
-    case "ExpiredCodeException" :
-        return /* `CognitoExpiredCode */[
-                -64788767,
-                msg
-              ];
-    case "InternalErrorException" :
-        return /* `CognitoInternalError */[
-                636052602,
-                msg
-              ];
-    case "InvalidLambdaResponseException" :
-        return /* `CognitoInvalidLambda */[
-                -469073267,
-                msg
-              ];
-    case "InvalidParameterException" :
-        return /* `CognitoInvalidParameter */[
-                -267133469,
-                msg
-              ];
-    case "LimitExceededException" :
-        return /* `CognitoLimitExceeded */[
-                767083101,
-                msg
-              ];
-    case "NotAuthorizedException" :
-        return /* `CognitoNotAuthorized */[
-                -1019683139,
-                msg
-              ];
-    case "ResourceNotFoundException" :
-        return /* `CognitoResourceNotFound */[
-                281060686,
-                msg
-              ];
-    case "TooManyFailedAttemptsException" :
-        return /* `CognitoTooManyFailedAttempts */[
-                261105285,
-                msg
-              ];
-    case "TooManyRequestsException" :
-        return /* `CognitoTooManyRequests */[
-                165203366,
-                msg
-              ];
-    case "UnexpectedLambdaException" :
-        return /* `CognitoUnexpectedLambda */[
-                -539579927,
-                msg
-              ];
-    case "UserLambdaValidationException" :
-        return /* `CognitoUserLambdaValidation */[
-                1019055420,
-                msg
-              ];
-    case "UserNotFoundException" :
-        return /* `CognitoUserNotFound */[
-                376697675,
-                msg
-              ];
-    default:
-      return /* `CognitoUnknownError */[
-              -55570033,
-              msg
-            ];
+function makeConfirmSignUpErrors(err) {
+  var match = makeAwsGenericErrors(err);
+  if (match !== undefined) {
+    return match;
+  } else {
+    var message = err[/* message */1];
+    switch (err[/* __type */0]) {
+      case "CodeDeliveryFailureException" :
+          return /* `CognitoCodeDeliveryFailure */[
+                  307717752,
+                  message
+                ];
+      case "InvalidEmailRoleAccessPolicyException" :
+          return /* `CognitoInvalidEmailRoleAccessPolicy */[
+                  -320011326,
+                  message
+                ];
+      case "InvalidPasswordException" :
+          return /* `CognitoInvalidPassword */[
+                  -17702879,
+                  message
+                ];
+      case "InvalidSmsRoleAccessPolicysException" :
+          return /* `CognitoInvalidSmsRoleAccessPolicys */[
+                  598714580,
+                  message
+                ];
+      case "InvalidSmsRoleTrustRelationshipException" :
+          return /* `CognitoInvalidSmsRoleTrustRelationship */[
+                  -198400121,
+                  message
+                ];
+      case "UsernameExistsException" :
+          return /* `CognitoUsernameExists */[
+                  -157849469,
+                  message
+                ];
+      default:
+        return /* ReasonCognitoUnknownError */536808491;
+    }
+  }
+}
+
+function makeSignUpErrors(err) {
+  var match = makeAwsGenericErrors(err);
+  if (match !== undefined) {
+    return match;
+  } else {
+    var message = err[/* message */1];
+    switch (err[/* __type */0]) {
+      case "CodeDeliveryFailureException" :
+          return /* `CognitoCodeDeliveryFailure */[
+                  307717752,
+                  message
+                ];
+      case "InvalidEmailRoleAccessPolicyException" :
+          return /* `CognitoInvalidEmailRoleAccessPolicy */[
+                  -320011326,
+                  message
+                ];
+      case "InvalidPasswordException" :
+          return /* `CognitoInvalidPassword */[
+                  -17702879,
+                  message
+                ];
+      case "InvalidSmsRoleAccessPolicysException" :
+          return /* `CognitoInvalidSmsRoleAccessPolicys */[
+                  598714580,
+                  message
+                ];
+      case "InvalidSmsRoleTrustRelationshipException" :
+          return /* `CognitoInvalidSmsRoleTrustRelationship */[
+                  -198400121,
+                  message
+                ];
+      case "UsernameExistsException" :
+          return /* `CognitoUsernameExists */[
+                  -157849469,
+                  message
+                ];
+      default:
+        return /* ReasonCognitoUnknownError */536808491;
+    }
   }
 }
 
 exports.makeOperationString = makeOperationString;
 exports.makeRegionString = makeRegionString;
-exports.makeSignupErrorVariant = makeSignupErrorVariant;
-exports.makeConfirmError = makeConfirmError;
+exports.makeAwsGenericErrors = makeAwsGenericErrors;
+exports.makeConfirmSignUpErrors = makeConfirmSignUpErrors;
+exports.makeSignUpErrors = makeSignUpErrors;
 /* No side effect */

@@ -71,7 +71,7 @@ and deliveryMedium =
   | SMS
   | UnknownDeliveryMedium;
 
-type rawCognitoError = {
+type awsRawApiError = {
   __type: string,
   message: string,
 };
@@ -112,85 +112,100 @@ type signInResponseDecoder = {
 
 external makeSignInResponse: 't => signInResponseDecoder = "%identity";
 
-type commonErrors =
-  | [];
+type apiErrorMessage = string;
 
-type signUpErrors = [
-  | `CognitoUnknownError(string)
-  | `CognitoCodeDeliveryFailure(string)
-  | `CognitoInternalError(string)
-  | `CognitoInvalidEmailRoleAccessPolicy(string)
-  | `CognitoInvalidLambdaResponse(string)
-  | `CognitoInvalidParameter(string)
-  | `CognitoInvalidPassword(string)
-  | `CognitoInvalidSmsRoleAccessPolicys(string)
-  | `CognitoInvalidSmsRoleTrustRelationship(string)
-  | `CognitoNotAuthorized(string)
-  | `CognitoResourceNotFound(string)
-  | `CognitoTooManyRequests(string)
-  | `CognitoUnexpectedLambda(string)
-  | `CognitoUserLambdaValidation(string)
-  | `CognitoUsernameExists(string)
-  | `CognitoDeserializeError(Js.Json.t)
+type reasonCognitoErrors = [
+  | `ReasonCognitoUnknownError
+  | `ReasonCognitoSerdeError(Js.Json.t)
 ];
 
-let makeSignupErrorVariant = ({__type, message: msg}) =>
+type awsGenericErrors = [
+  | `CognitoInternalError(apiErrorMessage)
+  | `CognitoInvalidLambdaResponse(apiErrorMessage)
+  | `CognitoInvalidParameter(apiErrorMessage)
+  | `CognitoNotAuthorized(apiErrorMessage)
+  | `CognitoResourceNotFound(apiErrorMessage)
+  | `CognitoTooManyRequests(apiErrorMessage)
+  | `CognitoUnexpectedLambda(apiErrorMessage)
+  | `CognitoUserLambdaValidation(apiErrorMessage)
+];
+
+let makeAwsGenericErrors = ({__type, message}) =>
   switch (__type) {
-  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
-  | "UsernameExistsException" => `CognitoUsernameExists(msg)
-  | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(msg)
-  | "InternalErrorException" => `CognitoInternalError(msg)
-  | "InvalidEmailRoleAccessPolicyException" =>
-    `CognitoInvalidEmailRoleAccessPolicy(msg)
-  | "InvalidLambdaResponseException" => `CognitoInvalidLambdaResponse(msg)
-  | "InvalidPasswordException" => `CognitoInvalidPassword(msg)
-  | "InvalidSmsRoleAccessPolicysException" =>
-    `CognitoInvalidSmsRoleAccessPolicys(msg)
-  | "InvalidSmsRoleTrustRelationshipException" =>
-    `CognitoInvalidSmsRoleTrustRelationship(msg)
-  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
-  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
-  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
-  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
-  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
-  | _ => `CognitoUnknownError(msg)
+  | "InvalidParameterException" => Some(`CognitoInvalidParameter(message))
+  | "InternalErrorException" => Some(`CognitoInternalError(message))
+  | "InvalidLambdaResponseException" =>
+    Some(`CognitoInvalidLambdaResponse(message))
+  | "NotAuthorizedException" => Some(`CognitoNotAuthorized(message))
+  | "ResourceNotFoundException" => Some(`CognitoResourceNotFound(message))
+  | "TooManyRequestsException" => Some(`CognitoTooManyRequests(message))
+  | "UnexpectedLambdaException" => Some(`CognitoUnexpectedLambda(message))
+  | "UserLambdaValidationException" =>
+    Some(`CognitoUserLambdaValidation(message))
+  | _ => None
   };
 
 type confirmSignUpErrors = [
-  | `CognitoAliasExists(string)
-  | `CognitoCodeMismatch(string)
-  | `CognitoExpiredCode(string)
-  | `CognitoInternalError(string)
-  | `CognitoInvalidLambda(string)
-  | `CognitoInvalidParameter(string)
-  | `CognitoLimitExceeded(string)
-  | `CognitoNotAuthorized(string)
-  | `CognitoResourceNotFound(string)
-  | `CognitoTooManyFailedAttempts(string)
-  | `CognitoTooManyRequests(string)
-  | `CognitoUnexpectedLambda(string)
-  | `CognitoUserLambdaValidation(string)
-  | `CognitoUserNotFound(string)
+  | `CognitoAliasExists(apiErrorMessage)
+  | `CognitoCodeMismatch(apiErrorMessage)
+  | `CognitoExpiredCode(apiErrorMessage)
+  | `CognitoLimitExceeded(apiErrorMessage)
+  | `CognitoTooManyFailedAttempts(apiErrorMessage)
+  | `CognitoUserNotFound(apiErrorMessage)
 ];
 
-let makeConfirmError = (err, msg) =>
-  switch (err) {
-  | "AliasExistsException" => `CognitoAliasExists(msg)
-  | "CodeMismatchException" => `CognitoCodeMismatch(msg)
-  | "ExpiredCodeException" => `CognitoExpiredCode(msg)
-  | "InternalErrorException" => `CognitoInternalError(msg)
-  | "InvalidLambdaResponseException" => `CognitoInvalidLambda(msg)
-  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
-  | "LimitExceededException" => `CognitoLimitExceeded(msg)
-  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
-  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
-  | "TooManyFailedAttemptsException" => `CognitoTooManyFailedAttempts(msg)
-  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
-  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
-
-  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
-  | "UserNotFoundException" => `CognitoUserNotFound(msg)
-  | _ => `CognitoUnknownError(msg)
+let makeConfirmSignUpErrors = err =>
+  switch (makeAwsGenericErrors(err)) {
+  | Some(genericError) => genericError
+  | None =>
+    let {__type, message} = err;
+    switch (__type) {
+    | "UsernameExistsException" => `CognitoUsernameExists(message)
+    | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(message)
+    | "InvalidEmailRoleAccessPolicyException" =>
+      `CognitoInvalidEmailRoleAccessPolicy(message)
+    | "InvalidPasswordException" => `CognitoInvalidPassword(message)
+    | "InvalidSmsRoleAccessPolicysException" =>
+      `CognitoInvalidSmsRoleAccessPolicys(message)
+    | "InvalidSmsRoleTrustRelationshipException" =>
+      `CognitoInvalidSmsRoleTrustRelationship(message)
+    | _ => `ReasonCognitoUnknownError
+    };
   };
 
-type signInExceptions = [ | `NotAuthorizedException(string)];
+type signUpErrors = [
+  | `CognitoCodeDeliveryFailure(apiErrorMessage)
+  | `CognitoInvalidEmailRoleAccessPolicy(apiErrorMessage)
+  | `CognitoInvalidPassword(apiErrorMessage)
+  | `CognitoInvalidSmsRoleAccessPolicys(apiErrorMessage)
+  | `CognitoInvalidSmsRoleTrustRelationship(apiErrorMessage)
+  | `CognitoUsernameExists(apiErrorMessage)
+];
+
+let makeSignUpErrors = err =>
+  switch (makeAwsGenericErrors(err)) {
+  | Some(genericError) => genericError
+  | None =>
+    let {__type, message} = err;
+    switch (__type) {
+    | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(message)
+    | "InvalidEmailRoleAccessPolicyException" =>
+      `CognitoInvalidEmailRoleAccessPolicy(message)
+    | "InvalidPasswordException" => `CognitoInvalidPassword(message)
+    | "InvalidSmsRoleAccessPolicysException" =>
+      `CognitoInvalidSmsRoleAccessPolicys(message)
+    | "InvalidSmsRoleTrustRelationshipException" =>
+      `CognitoInvalidSmsRoleTrustRelationship(message)
+    | "UsernameExistsException" => `CognitoUsernameExists(message)
+    | _ => `ReasonCognitoUnknownError
+    };
+  };
+
+type signInExceptions = [
+  | `CognitoInvalidSmsRoleAccessPolicy(apiErrorMessage)
+  | `CognitoInvalidSmsRoleTrustRelationship(apiErrorMessage)
+  | `CognitoInvalidUserPoolConfiguration(apiErrorMessage)
+  | `CognitoPasswordResetRequired(apiErrorMessage)
+  | `CognitoUserNotConfirmed(apiErrorMessage)
+  | `CognitoUserNotFound(apiErrorMessage)
+];

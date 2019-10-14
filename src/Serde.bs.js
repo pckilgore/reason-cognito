@@ -2,6 +2,7 @@
 'use strict';
 
 var $$Array = require("bs-platform/lib/js/array.js");
+var Curry = require("bs-platform/lib/js/curry.js");
 var Js_dict = require("bs-platform/lib/js/js_dict.js");
 var Js_json = require("bs-platform/lib/js/js_json.js");
 var Caml_option = require("bs-platform/lib/js/caml_option.js");
@@ -28,6 +29,15 @@ function parseCognitoError(err) {
     }
   }
   
+}
+
+function makeErrKind(err, makeErrorFunction) {
+  var match = parseCognitoError(err);
+  if (match !== undefined) {
+    return Curry._1(makeErrorFunction, match);
+  } else {
+    return /* ReasonCognitoUnknownError */536808491;
+  }
 }
 
 function makeSignupResponse(json) {
@@ -94,6 +104,7 @@ function jsonMapString(arr) {
 }
 
 exports.parseCognitoError = parseCognitoError;
+exports.makeErrKind = makeErrKind;
 exports.makeSignupResponse = makeSignupResponse;
 exports.jsonMapString = jsonMapString;
 /* No side effect */

@@ -17,6 +17,12 @@ let parseCognitoError = err =>
   | None => None
   };
 
+let makeErrKind = (err, makeErrorFunction) =>
+  switch (parseCognitoError(err)) {
+  | Some(err) => makeErrorFunction(err)
+  | None => `ReasonCognitoUnknownError
+  };
+
 let makeSignupResponse = json => {
   switch (Js.Json.decodeObject(json)) {
   | Some(env) =>
