@@ -10,27 +10,34 @@ let emailAttribute = Js.Dict.empty();
 Js.Dict.set(emailAttribute, "Name", "email");
 Js.Dict.set(emailAttribute, "Value", "reasoncog@pck.email");
 
-let testRequest =
-  auth
-  ->Cognito.signUp(
-      ~username="sarah6",
-      ~password="Password12345@",
-      ~attributes=[|emailAttribute|],
-      (),
-    )
-  ->Future.tapOk(value => Js.log2("OK", value))
-  ->Future.tapError(value => Js.log2("err", value));
+// let testRequest =
+//   auth
+//   ->Cognito.signUp(
+//       ~username="sarah7",
+//       ~password="Password12345@",
+//       ~attributes=[|emailAttribute|],
+//       (),
+//     )
+//   ->Future.tapOk(value => Js.log2("OK", value))
+//   ->Future.tapError(value => Js.log2("err", value));
 
-let emailAttribute = Js.Dict.empty();
-Js.Dict.set(emailAttribute, "Name", "email");
-Js.Dict.set(emailAttribute, "Value", "aa.rmand.in.box@gmail.com");
+// let emailAttribute = Js.Dict.empty();
+// Js.Dict.set(emailAttribute, "Name", "email");
+// Js.Dict.set(emailAttribute, "Value", "aa.rmand.in.box@gmail.com");
 
-let confirmSignUp =
-  auth->Cognito.confirmSignUp(
-    ~username="sometestuser3",
-    ~confirmationCode="301529",
-    (),
-  );
+// auth
+// ->Cognito.confirmSignUp(~username="sarah7", ~confirmationCode="217900", ())
+// ->Future.tapOk(value => Js.log2("OK", value))
+// ->Future.tapError(value => Js.log2("err", value)) /* let signOut */;
+
+auth
+->Cognito.initiateAuth(~username="sarah7", ~password="Password12345@", ())
+->Future.tapOk(value => Js.log2("OK", value))
+->Future.tapError(value => Js.log2("err", value)) /*     ()*/ /*     ~password="Password12345#"*/;
+
+/*   )*/
+
+/*   auth->Cognito.signOut()*/
 /* get `accessToken` from `signUp` response object, pass it to `changePassword` */
 // let changePassword =
 //   auth->Cognito.changePassword(
@@ -45,8 +52,3 @@ let confirmSignUp =
 // let signIn =
 //   auth->Cognito.initiateAuth(
 //     ~username="sometestuser2",
-//     ~password="Password12345#",
-//     (),
-//   );
-// let signOut =
-//   auth->Cognito.signOut();

@@ -12,7 +12,7 @@ emailAttribute["Name"] = "email";
 
 emailAttribute["Value"] = "reasoncog@pck.email";
 
-var testRequest = Future.tapError(Future.tapOk(Cognito.signUp(auth, "sarah6", "Password12345@", /* array */[emailAttribute], undefined, /* () */0), (function (value) {
+Future.tapError(Future.tapOk(Cognito.initiateAuth(auth, "sarah7", "Password12345@", /* () */0), (function (value) {
             console.log("OK", value);
             return /* () */0;
           })), (function (value) {
@@ -20,16 +20,6 @@ var testRequest = Future.tapError(Future.tapOk(Cognito.signUp(auth, "sarah6", "P
         return /* () */0;
       }));
 
-var emailAttribute$1 = { };
-
-emailAttribute$1["Name"] = "email";
-
-emailAttribute$1["Value"] = "aa.rmand.in.box@gmail.com";
-
-var confirmSignUp = Cognito.confirmSignUp(auth, "sometestuser3", "301529", /* () */0);
-
 exports.auth = auth;
-exports.testRequest = testRequest;
-exports.emailAttribute = emailAttribute$1;
-exports.confirmSignUp = confirmSignUp;
+exports.emailAttribute = emailAttribute;
 /* auth Not a pure module */

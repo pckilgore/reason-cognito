@@ -76,6 +76,18 @@ type rawCognitoError = {
   message: string,
 };
 
+type signInResponse = {
+  authenticationResult,
+  challengeParameters: Js.Json.t,
+}
+and authenticationResult = {
+  accessToken: string,
+  expiresIn: int,
+  idToken: string,
+  refreshToken: string,
+  tokenType: string,
+};
+
 [@bs.deriving abstract]
 type authenticationResultDecoder = {
   [@bs.as "AccessToken"]
@@ -97,19 +109,11 @@ type signInResponseDecoder = {
   [@bs.as "ChallengeParameters"]
   challengeParameters: Js.Json.t,
 };
-type signInResponse = {
-  authenticationResult,
-  challengeParameters: Js.Json.t,
-}
-and authenticationResult = {
-  accessToken: string,
-  expiresIn: int,
-  idToken: string,
-  refreshToken: string,
-  tokenType: string,
-};
 
 external makeSignInResponse: 't => signInResponseDecoder = "%identity";
+
+type commonErrors =
+  | [];
 
 type signUpErrors = [
   | `CognitoUnknownError(string)
@@ -129,3 +133,64 @@ type signUpErrors = [
   | `CognitoUsernameExists(string)
   | `CognitoDeserializeError(Js.Json.t)
 ];
+
+let makeSignupErrorVariant = ({__type, message: msg}) =>
+  switch (__type) {
+  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
+  | "UsernameExistsException" => `CognitoUsernameExists(msg)
+  | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(msg)
+  | "InternalErrorException" => `CognitoInternalError(msg)
+  | "InvalidEmailRoleAccessPolicyException" =>
+    `CognitoInvalidEmailRoleAccessPolicy(msg)
+  | "InvalidLambdaResponseException" => `CognitoInvalidLambdaResponse(msg)
+  | "InvalidPasswordException" => `CognitoInvalidPassword(msg)
+  | "InvalidSmsRoleAccessPolicysException" =>
+    `CognitoInvalidSmsRoleAccessPolicys(msg)
+  | "InvalidSmsRoleTrustRelationshipException" =>
+    `CognitoInvalidSmsRoleTrustRelationship(msg)
+  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
+  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
+  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
+  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
+  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
+  | _ => `CognitoUnknownError(msg)
+  };
+
+type confirmSignUpErrors = [
+  | `CognitoAliasExists(string)
+  | `CognitoCodeMismatch(string)
+  | `CognitoExpiredCode(string)
+  | `CognitoInternalError(string)
+  | `CognitoInvalidLambda(string)
+  | `CognitoInvalidParameter(string)
+  | `CognitoLimitExceeded(string)
+  | `CognitoNotAuthorized(string)
+  | `CognitoResourceNotFound(string)
+  | `CognitoTooManyFailedAttempts(string)
+  | `CognitoTooManyRequests(string)
+  | `CognitoUnexpectedLambda(string)
+  | `CognitoUserLambdaValidation(string)
+  | `CognitoUserNotFound(string)
+];
+
+let makeConfirmError = (err, msg) =>
+  switch (err) {
+  | "AliasExistsException" => `CognitoAliasExists(msg)
+  | "CodeMismatchException" => `CognitoCodeMismatch(msg)
+  | "ExpiredCodeException" => `CognitoExpiredCode(msg)
+  | "InternalErrorException" => `CognitoInternalError(msg)
+  | "InvalidLambdaResponseException" => `CognitoInvalidLambda(msg)
+  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
+  | "LimitExceededException" => `CognitoLimitExceeded(msg)
+  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
+  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
+  | "TooManyFailedAttemptsException" => `CognitoTooManyFailedAttempts(msg)
+  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
+  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
+
+  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
+  | "UserNotFoundException" => `CognitoUserNotFound(msg)
+  | _ => `CognitoUnknownError(msg)
+  };
+
+type signInExceptions = [ | `NotAuthorizedException(string)];

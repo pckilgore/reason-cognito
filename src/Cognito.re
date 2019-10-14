@@ -1,6 +1,7 @@
 [%raw "require('isomorphic-fetch')"];
 
 open Types;
+open Serde;
 
 type t = {
   poolId: string,
@@ -58,7 +59,7 @@ module Client = {
     | `CognitoApiError(response)
   ];
 
-  // Request is the core export of this library.  It's purpose is to
+  // Request's purpose is to
   // talk to the network and pass a JSON blob back to its caller if
   // there is no error in making the request.  If the request itself
   // returns an error code (4XX, 5XX), that should be handled elsewhere.
@@ -109,104 +110,6 @@ module Client = {
   };
 };
 
-let jsonMapString = arr =>
-  Array.map(
-    item => Js.Dict.map((. value) => Js.Json.string(value), item),
-    arr,
-  );
-
-let parseCognitoError = err =>
-  switch (Js.Json.decodeObject(err)) {
-  | Some(envelope) =>
-    switch (
-      Js.Dict.get(envelope, "__type"),
-      Js.Dict.get(envelope, "message"),
-    ) {
-    | (Some(type_), Some(msg)) =>
-      switch (Js.Json.decodeString(type_), Js.Json.decodeString(msg)) {
-      | (Some(__type), Some(message)) => Some({__type, message})
-      | _ => None
-      }
-    | _ => None
-    }
-  | None => None
-  };
-
-let makeSignupResponse = json => {
-  switch (Js.Json.decodeObject(json)) {
-  | Some(env) =>
-    switch (
-      Js.Dict.get(env, "UserConfirmed"),
-      Js.Dict.get(env, "UserSub"),
-      Js.Dict.get(env, "CodeDeliveryDetails"),
-    ) {
-    | (Some(confirmed), Some(sub), Some(delivery)) =>
-      switch (
-        Js.Json.decodeBoolean(confirmed),
-        Js.Json.decodeString(sub),
-        Js.Json.decodeObject(delivery),
-      ) {
-      | (Some(userConfirmed), Some(userSub), Some(delivery)) =>
-        switch (
-          Js.Dict.get(delivery, "AttributeName"),
-          Js.Dict.get(delivery, "DeliveryMedium"),
-          Js.Dict.get(delivery, "Destination"),
-        ) {
-        | (Some(attrib), Some(medium), Some(dest)) =>
-          switch (
-            Js.Json.decodeString(attrib),
-            Js.Json.decodeString(dest),
-            switch (Js.Json.decodeString(medium)) {
-            | Some(medium) when medium == "EMAIL" => Email
-            | Some(medium) when medium == "SMS" => SMS
-            | Some(_)
-            | None => UnknownDeliveryMedium
-            },
-          ) {
-          | (Some(attributeName), Some(destination), deliveryMedium) =>
-            Some({
-              userSub,
-              userConfirmed,
-              codeDeliveryDetails: {
-                attributeName,
-                deliveryMedium,
-                destination,
-              },
-            })
-          | _ => None
-          }
-        | _ => None
-        }
-      | _ => None
-      }
-    | _ => None
-    }
-  | None => None
-  };
-};
-
-let makeSignupErrorVariant = ({__type, message: msg}) =>
-  switch (__type) {
-  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
-  | "UsernameExistsException" => `CognitoUsernameExists(msg)
-  | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(msg)
-  | "InternalErrorException" => `CognitoInternalError(msg)
-  | "InvalidEmailRoleAccessPolicyException" =>
-    `CognitoInvalidEmailRoleAccessPolicy(msg)
-  | "InvalidLambdaResponseException" => `CognitoInvalidLambdaResponse(msg)
-  | "InvalidPasswordException" => `CognitoInvalidPassword(msg)
-  | "InvalidSmsRoleAccessPolicysException" =>
-    `CognitoInvalidSmsRoleAccessPolicys(msg)
-  | "InvalidSmsRoleTrustRelationshipException" =>
-    `CognitoInvalidSmsRoleTrustRelationship(msg)
-  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
-  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
-  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
-  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
-  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
-  | _ => `CognitoUnknownError(msg)
-  };
-
 let signUp =
     (config, ~username, ~password, ~attributes=[||], ~validationData=[||], ()) => {
   // Map attrib arrays into JSON form.
@@ -242,53 +145,69 @@ let signUp =
       )
     );
 };
-type confirmSignUpErrors = [
-  | `CognitoAliasExists(string)
-  | `CognitoCodeMismatch(string)
-  | `CognitoExpiredCode(string)
-  | `CognitoInternalError(string)
-  | `CognitoInvalidLambda(string)
-  | `CognitoInvalidParameter(string)
-  | `CognitoLimitExceeded(string)
-  | `CognitoNotAuthorized(string)
-  | `CognitoResourceNotFound(string)
-  | `CognitoTooManyFailedAttempts(string)
-  | `CognitoTooManyRequests(string)
-  | `CognitoUnexpectedLambda(string)
-  | `CognitoUserLambdaValidation(string)
-  | `CognitoUserNotFound(string)
-];
-let makeConfirmError = (err, msg) =>
-  switch (err) {
-  | "AliasExistsException" => `CognitoAliasExists(msg)
-  | "CodeMismatchException" => `CognitoCodeMismatch(msg)
-  | "ExpiredCodeException" => `CognitoExpiredCode(msg)
-  | "InternalErrorException" => `CognitoInternalError(msg)
-  | "InvalidLambdaResponseException" => `CognitoInvalidLambda(msg)
-  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
-  | "LimitExceededException" => `CognitoLimitExceeded(msg)
-  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
-  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
-  | "TooManyFailedAttemptsException" => `CognitoTooManyFailedAttempts(msg)
-  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
-  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
 
-  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
-  | "UserNotFoundException" => `CognitoUserNotFound(msg)
-  | _ => `CognitoUnknownError(msg)
+let confirmSignUp =
+    (
+      config,
+      ~username,
+      ~confirmationCode,
+      ~forceAliasCreation=false,
+      ~secretHash=?,
+      ~clientMetadata=?,
+      ~analyticsEndpointId=?,
+      (),
+    ) => {
+  // https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_ConfirmSignUp.html
+
+  // Request:
+  let params = Js.Dict.empty();
+  // {
+  //   "AnalyticsMetadata": {
+  //     "AnalyticsEndpointId": "string",
+  //   },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+  //   "ClientMetadata": {
+  //     "string": "string",
+  //   },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
   };
 
-let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
-  let params = Js.Dict.empty();
-
-  Js.Dict.set(params, "Username", Js.Json.string(username));
+  //   "ConfirmationCode": "string",
   Js.Dict.set(params, "ConfirmationCode", Js.Json.string(confirmationCode));
+
+  //   "ForceAliasCreation": boolean,
+  Js.Dict.set(
+    params,
+    "ForceAliasCreation",
+    Js.Json.boolean(forceAliasCreation),
+  );
+
+  //   "SecretHash": "string",
+  switch (secretHash) {
+  | Some(secretHash) =>
+    Js.Dict.set(params, "SecretHash", Js.Json.boolean(secretHash))
+  | None => ()
+  };
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+  //   "Username": "string",
+  Js.Dict.set(params, "Username", Js.Json.string(username));
+  // };
 
   Client.request(config, ConfirmSignUp, params)
   ->Future.flatMapOk(res =>
       Future.value(
         switch (res.status) {
-        | Success(_) => Belt.Result.Ok(res)
+        | Success(_) => Belt.Result.Ok()
         | Informational(_)
         | Redirect(_)
         | ClientError(_)
@@ -303,8 +222,6 @@ let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
       )
     );
 };
-
-type signInExceptions = [ | `NotAuthorizedException(string)];
 
 let initiateAuth = (config, ~username: string, ~password: string, ()) => {
   let authParams = Js.Dict.empty();
@@ -321,6 +238,7 @@ let initiateAuth = (config, ~username: string, ~password: string, ()) => {
         | Success(_) =>
           // We're _really_ hoping amazon holds to their API contract here.
           // If not, we're going to see null type errors.
+          Js.log(res);
           let signInResponse = makeSignInResponse(res);
           let authDecoder = signInResponse->authenticationResultDecoderGet;
           let authenticationResult = {
