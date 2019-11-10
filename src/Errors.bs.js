@@ -437,6 +437,89 @@ var ResendConfirmationCode = {
   makeFromJson: makeFromJson$7
 };
 
+function make$8(param) {
+  var message = param[/* message */1];
+  switch (param[/* __type */0]) {
+    case "AliasExistsException" :
+        return /* `CognitoAliasExists */[
+                -498244869,
+                message
+              ];
+    case "CodeMismatchException" :
+        return /* `CognitoCodeMismatch */[
+                -817363892,
+                message
+              ];
+    case "ExpiredCodeException" :
+        return /* `CognitoExpiredCode */[
+                -64788767,
+                message
+              ];
+    case "InvalidPasswordException" :
+        return /* `CognitoInvalidPassword */[
+                -17702879,
+                message
+              ];
+    case "InvalidSmsRoleAccessPolicyException" :
+        return /* `CognitoInvalidSmsRoleAccessPolicy */[
+                782712511,
+                message
+              ];
+    case "InvalidSmsRoleTrustRelationshipException" :
+        return /* `CognitoInvalidSmsRoleTrustRelationship */[
+                -198400121,
+                message
+              ];
+    case "InvalidUserPoolConfigurationException" :
+        return /* `CognitoInvalidUserPoolConfiguration */[
+                992401065,
+                message
+              ];
+    case "MFAMethodNotFoundException" :
+        return /* `CognitoMFAMethodNotFound */[
+                -618443289,
+                message
+              ];
+    case "PasswordResetRequiredException" :
+        return /* `CognitoPasswordResetRequired */[
+                959433314,
+                message
+              ];
+    case "SoftwareTokenMFANotFoundException" :
+        return /* `CognitoSoftwareTokenMFANotFound */[
+                -723187146,
+                message
+              ];
+    case "UserNotConfirmedException" :
+        return /* `CognitoUserNotConfirmed */[
+                937418472,
+                message
+              ];
+    case "UserNotFoundException" :
+        return /* `CognitoUserNotFound */[
+                376697675,
+                message
+              ];
+    default:
+      return /* ReasonCognitoUnknownError */536808491;
+  }
+}
+
+function makeFromJson$8(json) {
+  var err = Curry._1(CognitoJson_bs.read_error, json);
+  var match = make(err);
+  if (match !== undefined) {
+    return match;
+  } else {
+    return make$8(err);
+  }
+}
+
+var RespondToAuthChallenge = {
+  make: make$8,
+  makeFromJson: makeFromJson$8
+};
+
 exports.Common = Common;
 exports.ConfirmSignUp = ConfirmSignUp;
 exports.SignUpErrors = SignUpErrors;
@@ -445,4 +528,5 @@ exports.ChangePassword = ChangePassword;
 exports.ConfirmForgotPassword = ConfirmForgotPassword;
 exports.ForgotPassword = ForgotPassword;
 exports.ResendConfirmationCode = ResendConfirmationCode;
+exports.RespondToAuthChallenge = RespondToAuthChallenge;
 /* CognitoJson_bs Not a pure module */

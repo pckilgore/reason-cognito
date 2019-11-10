@@ -90,7 +90,6 @@ module Client = {
       | InitiateAuth
       | ResendConfirmationCode
       | RespondToAuthChallenge
-      | SignIn
       | SignUp;
 
     let toString =
@@ -102,7 +101,6 @@ module Client = {
       | InitiateAuth => "InitiateAuth"
       | ResendConfirmationCode => "ResendConfirmationCode"
       | RespondToAuthChallenge => "RespondToAuthChallenge"
-      | SignIn => "SignIn"
       | SignUp => "SignUp";
   };
 
@@ -388,7 +386,7 @@ let initiateAuth =
       Future.value(
         switch (status) {
         | Success(_) =>
-          Belt.Result.Ok(CognitoJson_bs.read_initiateAuthResponse(json))
+          Belt.Result.Ok(CognitoJson_bs.read_authenticationResponse(json))
         | Informational(_)
         | Redirect(_)
         | ClientError(_)
@@ -591,6 +589,79 @@ let resendConfirmationCode =
         | ClientError(_)
         | ServerError(_) =>
           Belt.Result.Error(Errors.ResendConfirmationCode.makeFromJson(json))
+        },
+      )
+    );
+};
+
+let respondToAuthChallenge =
+    (
+      config,
+      ~challengeName: CognitoJson_bs.challengeName,
+      ~challengeResponses=?,
+      ~session=?,
+      ~analyticsEndpointId=?,
+      ~clientMetadata=?,
+      (),
+    ) => {
+  let params = Js.Dict.empty();
+  //   {
+  //    "AnalyticsMetadata": {
+  //       "AnalyticsEndpointId": "string"
+  //    },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  //  "ChallengeName": "string",
+  Js.Dict.set(
+    params,
+    "ChallengeName",
+    CognitoJson_bs.write_challengeName(challengeName),
+  );
+  // "ChallengeResponses": {
+  //     "string" : "string"
+  //  },
+  switch (challengeResponses) {
+  | Some(data) =>
+    Js.Dict.set(params, "ChallengeResponses", Js.Json.object_(data))
+  | None => ()
+  };
+  //    "ClientId": "string", <- from config
+  //    "ClientMetadata": {
+  //       "string" : "string"
+  //    },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  //    "Session": "string"
+  switch (session) {
+  | Some(data) => Js.Dict.set(params, "Session", Js.Json.string(data))
+  | None => ()
+  };
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+  // }
+
+  Client.request(config, RespondToAuthChallenge, params)
+  ->Future.flatMapOk(({status, json}) =>
+      Future.value(
+        switch (status) {
+        | Success(_) =>
+          Belt.Result.Ok(CognitoJson_bs.read_authenticationResponse(json))
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(Errors.RespondToAuthChallenge.makeFromJson(json))
         },
       )
     );

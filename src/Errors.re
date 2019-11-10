@@ -267,3 +267,51 @@ module ResendConfirmationCode = {
     };
   };
 };
+
+module RespondToAuthChallenge = {
+  type t = [
+    | `CognitoAliasExistsException(apiErrorMessage)
+    | `CognitoCodeMismatchException(apiErrorMessage)
+    | `CognitoExpiredCodeException(apiErrorMessage)
+    | `CognitoInvalidPasswordException(apiErrorMessage)
+    | `CognitoInvalidSmsRoleAccessPolicyException(apiErrorMessage)
+    | `CognitoInvalidSmsRoleTrustRelationshipException(apiErrorMessage)
+    | `CognitoInvalidUserPoolConfigurationException(apiErrorMessage)
+    | `CognitoMFAMethodNotFoundException(apiErrorMessage)
+    | `CognitoPasswordResetRequiredException(apiErrorMessage)
+    | `CognitoSoftwareTokenMFANotFoundException(apiErrorMessage)
+    | `CognitoUserNotConfirmedException(apiErrorMessage)
+    | `CognitoUserNotFoundException(apiErrorMessage)
+    | `ReasonCognitoUnknownError
+  ];
+
+  let make = ({__type, message}: CognitoJson_bs.error) =>
+    switch (__type) {
+    | "AliasExistsException" => `CognitoAliasExists(message)
+    | "CodeMismatchException" => `CognitoCodeMismatch(message)
+    | "ExpiredCodeException" => `CognitoExpiredCode(message)
+    | "InvalidPasswordException" => `CognitoInvalidPassword(message)
+    | "InvalidSmsRoleAccessPolicyException" =>
+      `CognitoInvalidSmsRoleAccessPolicy(message)
+    | "InvalidSmsRoleTrustRelationshipException" =>
+      `CognitoInvalidSmsRoleTrustRelationship(message)
+    | "InvalidUserPoolConfigurationException" =>
+      `CognitoInvalidUserPoolConfiguration(message)
+    | "MFAMethodNotFoundException" => `CognitoMFAMethodNotFound(message)
+    | "PasswordResetRequiredException" =>
+      `CognitoPasswordResetRequired(message)
+    | "SoftwareTokenMFANotFoundException" =>
+      `CognitoSoftwareTokenMFANotFound(message)
+    | "UserNotConfirmedException" => `CognitoUserNotConfirmed(message)
+    | "UserNotFoundException" => `CognitoUserNotFound(message)
+    | _ => `ReasonCognitoUnknownError
+    };
+
+  let makeFromJson = json => {
+    let err = CognitoJson_bs.read_error(json);
+    switch (Common.make(err)) {
+    | Some(commonError) => commonError
+    | None => make(err)
+    };
+  };
+};
