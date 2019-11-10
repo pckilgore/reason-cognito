@@ -1,0 +1,67 @@
+(* All Variants *)
+
+type challengeName = [
+  | SMS_MFA 
+  | SOFTWARE_TOKEN_MFA 
+  | SELECT_MFA_TYPE 
+  | MFA_SETUP 
+  | PASSWORD_VERIFIER 
+  | CUSTOM_CHALLENGE 
+  | DEVICE_SRP_AUTH 
+  | DEVICE_PASSWORD_VERIFIER 
+  | ADMIN_NO_SRP_AUTH 
+  | NEW_PASSWORD_REQUIRED
+]
+
+type deliveryMedium = [ 
+  | Email 
+  | SMS 
+]
+
+(* Argument Types *)
+
+(* Response Types *)
+type authenticationResult = {
+  accessToken <json name="AccessToken"> : string;
+  expiresIn <json name="ExpiresIn"> : int;
+  idToken <json name="IdToken"> : string;
+  refreshToken <json name="RefreshToken"> : string;
+  tokenType <json name="TokenType"> : string;
+  newDeviceMetaData <json name="NewDeviceMetadata"> : newDeviceMetaData;
+}
+
+type challengeParameters = (string * string) list <json repr="object">
+
+type codeDeliveryDetails = {
+  attributeName <json name="AttributeName"> : string;
+  deliveryMedium <json name="DeliveryMedium"> : deliveryMedium;
+  destination <json name="Destination">: string;
+}
+
+type authenticationResponse = {
+  authenticationResult <json name="AuthenticationResult"> : authenticationResult;
+  ?challengeName <json name="ChallengeName"> : challengeName option;
+  ?challengeParameters <json name="ChallengeParameters"> : challengeParameters option;
+}
+
+type newDeviceMetaData = {
+  deviceGroupKey <json name="DeviceGroupKey"> : string;
+  deviceKey <json name="DeviceKey"> : string;
+}
+
+type signUpResponse = {
+  codeDeliveryDetails <json name="CodeDeliveryDetails"> : codeDeliveryDetails;
+  userConfirmed <json name="UserConfirmed">: bool;
+  userSub <json name="UserSub">: string;
+}
+
+type codeDeliveryResponse = {
+  codeDeliveryDetails <json name="CodeDeliveryDetails"> : codeDeliveryDetails;
+}
+
+(* Errors *)
+
+type error = {
+  __type : string;
+  message : string;
+}

@@ -270,18 +270,18 @@ module ResendConfirmationCode = {
 
 module RespondToAuthChallenge = {
   type t = [
-    | `CognitoAliasExistsException(apiErrorMessage)
-    | `CognitoCodeMismatchException(apiErrorMessage)
-    | `CognitoExpiredCodeException(apiErrorMessage)
-    | `CognitoInvalidPasswordException(apiErrorMessage)
-    | `CognitoInvalidSmsRoleAccessPolicyException(apiErrorMessage)
-    | `CognitoInvalidSmsRoleTrustRelationshipException(apiErrorMessage)
-    | `CognitoInvalidUserPoolConfigurationException(apiErrorMessage)
-    | `CognitoMFAMethodNotFoundException(apiErrorMessage)
-    | `CognitoPasswordResetRequiredException(apiErrorMessage)
-    | `CognitoSoftwareTokenMFANotFoundException(apiErrorMessage)
-    | `CognitoUserNotConfirmedException(apiErrorMessage)
-    | `CognitoUserNotFoundException(apiErrorMessage)
+    | `CognitoAliasExists(apiErrorMessage)
+    | `CognitoCodeMismatch(apiErrorMessage)
+    | `CognitoExpiredCode(apiErrorMessage)
+    | `CognitoInvalidPassword(apiErrorMessage)
+    | `CognitoInvalidSmsRoleAccessPolicy(apiErrorMessage)
+    | `CognitoInvalidSmsRoleTrustRelationship(apiErrorMessage)
+    | `CognitoInvalidUserPoolConfiguration(apiErrorMessage)
+    | `CognitoMFAMethodNotFound(apiErrorMessage)
+    | `CognitoPasswordResetRequired(apiErrorMessage)
+    | `CognitoSoftwareTokenMFANotFound(apiErrorMessage)
+    | `CognitoUserNotConfirmed(apiErrorMessage)
+    | `CognitoUserNotFound(apiErrorMessage)
     | `ReasonCognitoUnknownError
   ];
 
