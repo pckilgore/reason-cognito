@@ -14,7 +14,6 @@ A. Bucklescript Only
    - [ ] Signin
      - [ ] Password Flow
      - [ ] SRP Flow
-   - [ ] SignOut
    - [ ] Change Password
    - [ ] Reset Password
 2. [ ] Modularization
