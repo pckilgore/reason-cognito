@@ -9,15 +9,15 @@ MVP Development Path:
 A. Bucklescript Only
 
 1. [ ] Client Operations
-   - [ ] SignUp
-   - [ ] Confirm SignUp
-   - [ ] Signin
-     - [ ] Password Flow
+   - [x] SignUp
+   - [x] Confirm SignUp
+   - [x] InitiateAuth
+     - [x] Password Flow
      - [ ] SRP Flow
-   - [ ] Change Password
-   - [ ] Reset Password
-2. [ ] Modularization
-   - [ ] Identify Sharable Core
+   - [x] Change Password
+   - [x] Reset Password
+2. [x] Modularization
+   - [x] Identify Sharable Core
    - [ ] Extract to Separte Modules
    - [ ] Remove all Bucklescript Dependencies from Core
    - [ ] Consume core (tightly bound by bs module)
