@@ -10,7 +10,11 @@
     "in-source": true
   },
   "suffix": ".bs.js",
-  "bs-dependencies": ["bs-fetch", "reason-future"],
+  "bs-dependencies": [
+    "bs-fetch",
+    "reason-future",
+    "@ahrefs/bs-atdgen-codec-runtime"
+  ],
   "warnings": {
     "error": "+101"
   },

@@ -1,47 +1,108 @@
 [%raw "require('isomorphic-fetch')"];
 
-open Types;
+open Utils;
 
-type t = {
-  poolId: string,
-  clientId: string,
-  endpoint: string,
-  authenticationFlowType,
-};
+module Config = {
+  module AuthenticationFlowType = {
+    /* https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html#API_InitiateAuth_RequestSyntax */
+    type t =
+      | USER_PASSWORD_AUTH
+      | USER_SRP_AUTH
+      | CUSTOM_AUTH;
 
-let makeConfig =
-    (~poolId, ~clientId, ~region, ~authenticationFlowType=USER_SRP_AUTH, ()) => {
-  clientId,
-  poolId,
-  authenticationFlowType,
-  endpoint:
-    "https://cognito-idp." ++ makeRegionString(region) ++ ".amazonaws.com/",
-};
+    let toString =
+      fun
+      | USER_PASSWORD_AUTH => "USER_PASSWORD_AUTH"
+      | USER_SRP_AUTH => "USER_SRP_AUTH"
+      | CUSTOM_AUTH => "CUSTOM_AUTH";
 
-module type Client = {
-  type error = [
-    | `CognitoClientError(Js.Promise.error)
-    | `CognitoJsonParseError(Js.Promise.error)
-  ];
-  type response = {
-    status: int,
-    json: Js.Json.t,
+    let toJson = t => t->toString->Js.Json.string;
   };
-  let request:
-    (t, string, Js.Dict.t(Js.Json.t), t, operation, Js.Dict.t(Js.Json.t)) =>
-    Future.t(Belt.Result.t(response, [< error]));
+  module Region = {
+    type t =
+      | UsEast1
+      | UsEast2
+      | UsWest2
+      | ApSouth1
+      | ApNortheast1
+      | ApNortheast2
+      | ApSoutheast1
+      | ApSoutheast2
+      | CaCentral1
+      | EuCentral1
+      | EuWest1
+      | EuWest2;
+
+    let toString =
+      fun
+      | UsEast1 => "us-east-1"
+      | UsEast2 => "us-east-2"
+      | UsWest2 => "us-west-2"
+      | ApSouth1 => "ap-south-1"
+      | ApNortheast1 => "ap-northeast-2"
+      | ApNortheast2 => "ap-northeast-2"
+      | ApSoutheast1 => "ap-southeast-1"
+      | ApSoutheast2 => "ap-southeast-2"
+      | CaCentral1 => "ca-central-1"
+      | EuCentral1 => "eu-central-1"
+      | EuWest1 => "eu-west-1"
+      | EuWest2 => "eu-west-2";
+  };
+  type t = {
+    poolId: string,
+    clientId: string,
+    endpoint: string,
+    authenticationFlowType: AuthenticationFlowType.t,
+  };
+
+  let make =
+      (
+        ~poolId,
+        ~clientId,
+        ~region,
+        ~authenticationFlowType=AuthenticationFlowType.USER_SRP_AUTH,
+        (),
+      ) => {
+    clientId,
+    poolId,
+    authenticationFlowType,
+    endpoint:
+      "https://cognito-idp." ++ Region.toString(region) ++ ".amazonaws.com/",
+  };
 };
+
 module Client = {
-  // In the end we really prefer a generic client interface, probably more
-  // generic than this one.  Why?  So we can plug out the implmentation
-  // on native, mobile, or what have you.  Right now, this is JS/Node
-  // targets only.
+  // Trying to maintain a generic implementation here so that it can be plugged out
+  // in different libraries.
   type status =
     | Informational(int)
     | Success(int)
     | Redirect(int)
     | ClientError(int)
     | ServerError(int);
+
+  module Operation = {
+    type t =
+      | ChangePassword
+      | ConfirmForgotPassword
+      | ConfirmSignUp
+      | ForgotPassword
+      | InitiateAuth
+      | ResendConfirmationCode
+      | RespondToAuthChallenge
+      | SignUp;
+
+    let toString =
+      fun
+      | ChangePassword => "ChangePassword"
+      | ConfirmForgotPassword => "ConfirmForgotPassword"
+      | ConfirmSignUp => "ConfirmSignUp"
+      | ForgotPassword => "ForgotPassword"
+      | InitiateAuth => "InitiateAuth"
+      | ResendConfirmationCode => "ResendConfirmationCode"
+      | RespondToAuthChallenge => "RespondToAuthChallenge"
+      | SignUp => "SignUp";
+  };
 
   type response = {
     status,
@@ -52,23 +113,19 @@ module Client = {
   // library.  Because polymorphic variants are GLOBAL, we use highly
   // descriptive names.  Because we are lazy, we are mostly passing along
   // Js.Promise.Error here, to give end-users maximum handling flexibility.
-  type error = [
-    | `CognitoClientError(Js.Promise.error)
-    | `CognitoJsonParseError(Js.Promise.error)
-    | `CognitoApiError(response)
-  ];
+  type error = [ | `ReasonCognitoClientError(Js.Promise.error)];
 
-  // Request is the core export of this library.  It's purpose is to
+  // Request's purpose is to
   // talk to the network and pass a JSON blob back to its caller if
   // there is no error in making the request.  If the request itself
   // returns an error code (4XX, 5XX), that should be handled elsewhere.
   //
   // TODO: More generic implemntation (no Js.* types)
-  let request = (config, operation, params: Js.Dict.t(Js.Json.t)) => {
+  let request = (config: Config.t, operation, params: Js.Dict.t(Js.Json.t)) => {
     // Setup headers.
     let headers = Js.Dict.empty();
     let target =
-      "AWSCognitoIdentityProviderService." ++ makeOperationString(operation);
+      "AWSCognitoIdentityProviderService." ++ Operation.toString(operation);
     Js.Dict.set(headers, "X-Amz-Target", target);
     Js.Dict.set(headers, "Content-Type", "application/x-amz-json-1.1");
     Js.Dict.set(headers, "X-Amz-User-Agent", "reason-cognito/0.1.x js");
@@ -89,11 +146,13 @@ module Client = {
       ),
     )
     // Error = fetch did not do anything.
-    ->FutureJs.fromPromise(fetchError => `CognitoClientError(fetchError))
+    ->FutureJs.fromPromise(fetchError =>
+        `ReasonCognitoClientError(fetchError)
+      )
     // OK = fetch did something. Map result to easily consumable type.
     ->Future.flatMapOk(apiResponse =>
         Fetch.Response.json(apiResponse)
-        ->FutureJs.fromPromise(err => `CognitoJsonParseError(err))
+        ->FutureJs.fromPromise(err => `ReasonCognitoClientError(err))
         ->Future.mapOk(json => {
             let status =
               switch (Fetch.Response.status(apiResponse)) {
@@ -109,248 +168,500 @@ module Client = {
   };
 };
 
-let jsonMapString = arr =>
-  Array.map(
-    item => Js.Dict.map((. value) => Js.Json.string(value), item),
-    arr,
+let signUp =
+    (
+      config,
+      ~username,
+      ~password,
+      ~attributes=[||],
+      ~validationData=[||],
+      ~analyticsEndpointId=?,
+      ~clientMetadata=?,
+      ~secretHash=?,
+      (),
+    ) => {
+  // https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_SignUp.html
+
+  // {
+  let params = Js.Dict.empty();
+  //   "AnalyticsMetadata": {
+  //     "AnalyticsEndpointId": "string",
+  //   },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+  //   "ClientId": "string", <- from client config
+
+  //   "ClientMetadata": {
+  //     "string": "string",
+  //   },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  //   "Password": "string",
+  Js.Dict.set(params, "Password", Js.Json.string(password));
+
+  //   "SecretHash": "string",
+  switch (secretHash) {
+  | Some(secretHash) =>
+    Js.Dict.set(params, "SecretHash", Js.Json.boolean(secretHash))
+  | None => ()
+  };
+
+  //   "UserAttributes": [{"Name": "string", "Value": "string"}],
+  Js.Dict.set(
+    params,
+    "UserAttributes",
+    jsonMapString(attributes)->Js.Json.objectArray,
   );
 
-let parseCognitoError = err =>
-  switch (Js.Json.decodeObject(err)) {
-  | Some(envelope) =>
-    switch (
-      Js.Dict.get(envelope, "__type"),
-      Js.Dict.get(envelope, "message"),
-    ) {
-    | (Some(type_), Some(msg)) =>
-      switch (Js.Json.decodeString(type_), Js.Json.decodeString(msg)) {
-      | (Some(__type), Some(message)) => Some({__type, message})
-      | _ => None
-      }
-    | _ => None
-    }
-  | None => None
-  };
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  /* ^^ADVANCED SECURITY UNIMPLEMENTED^*/
 
-let makeSignupResponse = json => {
-  switch (Js.Json.decodeObject(json)) {
-  | Some(env) =>
-    switch (
-      Js.Dict.get(env, "UserConfirmed"),
-      Js.Dict.get(env, "UserSub"),
-      Js.Dict.get(env, "CodeDeliveryDetails"),
-    ) {
-    | (Some(confirmed), Some(sub), Some(delivery)) =>
-      switch (
-        Js.Json.decodeBoolean(confirmed),
-        Js.Json.decodeString(sub),
-        Js.Json.decodeObject(delivery),
-      ) {
-      | (Some(userConfirmed), Some(userSub), Some(delivery)) =>
-        switch (
-          Js.Dict.get(delivery, "AttributeName"),
-          Js.Dict.get(delivery, "DeliveryMedium"),
-          Js.Dict.get(delivery, "Destination"),
-        ) {
-        | (Some(attrib), Some(medium), Some(dest)) =>
-          switch (
-            Js.Json.decodeString(attrib),
-            Js.Json.decodeString(dest),
-            switch (Js.Json.decodeString(medium)) {
-            | Some(medium) when medium == "EMAIL" => Email
-            | Some(medium) when medium == "SMS" => SMS
-            | Some(_)
-            | None => UnknownDeliveryMedium
-            },
-          ) {
-          | (Some(attributeName), Some(destination), deliveryMedium) =>
-            Some({
-              userSub,
-              userConfirmed,
-              codeDeliveryDetails: {
-                attributeName,
-                deliveryMedium,
-                destination,
-              },
-            })
-          | _ => None
-          }
-        | _ => None
-        }
-      | _ => None
-      }
-    | _ => None
-    }
-  | None => None
-  };
-};
+  //   "Username": "string",
+  Js.Dict.set(params, "Username", Js.Json.string(username));
 
-let makeSignupErrorVariant = ({__type, message: msg}) =>
-  switch (__type) {
-  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
-  | "UsernameExistsException" => `CognitoUsernameExists(msg)
-  | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(msg)
-  | "InternalErrorException" => `CognitoInternalError(msg)
-  | "InvalidEmailRoleAccessPolicyException" =>
-    `CognitoInvalidEmailRoleAccessPolicy(msg)
-  | "InvalidLambdaResponseException" => `CognitoInvalidLambdaResponse(msg)
-  | "InvalidPasswordException" => `CognitoInvalidPassword(msg)
-  | "InvalidSmsRoleAccessPolicysException" =>
-    `CognitoInvalidSmsRoleAccessPolicys(msg)
-  | "InvalidSmsRoleTrustRelationshipException" =>
-    `CognitoInvalidSmsRoleTrustRelationship(msg)
-  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
-  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
-  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
-  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
-  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
-  | _ => `CognitoUnknownError(msg)
-  };
+  //   "ValidationData": [{"Name": "string", "Value": "string"}],
+  Js.Dict.set(
+    params,
+    "ValidationData",
+    jsonMapString(validationData)->Js.Json.objectArray,
+  );
+  // };
 
-let signUp =
-    (config, ~username, ~password, ~attributes=[||], ~validationData=[||], ()) => {
-  // Map attrib arrays into JSON form.
-  let jsonAttribs = jsonMapString(attributes);
-  let jsonVData = jsonMapString(validationData);
-
-  let payload = Js.Dict.empty();
-  Js.Dict.set(payload, "Username", Js.Json.string(username));
-  Js.Dict.set(payload, "Password", Js.Json.string(password));
-  Js.Dict.set(payload, "UserAttributes", Js.Json.objectArray(jsonAttribs));
-  Js.Dict.set(payload, "ValidationData", Js.Json.objectArray(jsonVData));
-
-  Client.request(config, SignUp, payload)
+  Client.request(config, SignUp, params)
   ->Future.flatMapOk(res =>
       Future.value(
         switch (res.status) {
         | Success(_) =>
-          switch (makeSignupResponse(res.json)) {
-          | Some(result) => Belt.Result.Ok(result)
-          | None => Belt.Result.Error(`CognitoDeserializeError(res.json))
-          }
+          Belt.Result.Ok(CognitoJson_bs.read_signUpResponse(res.json))
         | Informational(_)
         | Redirect(_)
         | ClientError(_)
         | ServerError(_) =>
-          Belt.Result.Error(
-            switch (parseCognitoError(res.json)) {
-            | Some(err) => makeSignupErrorVariant(err)
-            | None => `CognitoDeserializeError(res.json)
-            },
-          )
+          Belt.Result.Error(Errors.SignUpErrors.makeFromJson(res.json))
         },
       )
     );
 };
-type confirmSignUpErrors = [
-  | `CognitoAliasExists(string)
-  | `CognitoCodeMismatch(string)
-  | `CognitoExpiredCode(string)
-  | `CognitoInternalError(string)
-  | `CognitoInvalidLambda(string)
-  | `CognitoInvalidParameter(string)
-  | `CognitoLimitExceeded(string)
-  | `CognitoNotAuthorized(string)
-  | `CognitoResourceNotFound(string)
-  | `CognitoTooManyFailedAttempts(string)
-  | `CognitoTooManyRequests(string)
-  | `CognitoUnexpectedLambda(string)
-  | `CognitoUserLambdaValidation(string)
-  | `CognitoUserNotFound(string)
-];
-let makeConfirmError = (err, msg) =>
-  switch (err) {
-  | "AliasExistsException" => `CognitoAliasExists(msg)
-  | "CodeMismatchException" => `CognitoCodeMismatch(msg)
-  | "ExpiredCodeException" => `CognitoExpiredCode(msg)
-  | "InternalErrorException" => `CognitoInternalError(msg)
-  | "InvalidLambdaResponseException" => `CognitoInvalidLambda(msg)
-  | "InvalidParameterException" => `CognitoInvalidParameter(msg)
-  | "LimitExceededException" => `CognitoLimitExceeded(msg)
-  | "NotAuthorizedException" => `CognitoNotAuthorized(msg)
-  | "ResourceNotFoundException" => `CognitoResourceNotFound(msg)
-  | "TooManyFailedAttemptsException" => `CognitoTooManyFailedAttempts(msg)
-  | "TooManyRequestsException" => `CognitoTooManyRequests(msg)
-  | "UnexpectedLambdaException" => `CognitoUnexpectedLambda(msg)
 
-  | "UserLambdaValidationException" => `CognitoUserLambdaValidation(msg)
-  | "UserNotFoundException" => `CognitoUserNotFound(msg)
-  | _ => `CognitoUnknownError(msg)
+let confirmSignUp =
+    (
+      config,
+      ~username,
+      ~confirmationCode,
+      ~forceAliasCreation=false,
+      ~secretHash=?,
+      ~clientMetadata=?,
+      ~analyticsEndpointId=?,
+      (),
+    ) => {
+  // https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_ConfirmSignUp.html
+
+  // {
+  let params = Js.Dict.empty();
+  //   "AnalyticsMetadata": {
+  //     "AnalyticsEndpointId": "string",
+  //   },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
   };
 
-let confirmSignUp = (config, ~username, ~confirmationCode, ()) => {
-  let params = Js.Dict.empty();
+  //   "ClientId": "string", <- from client config
 
-  Js.Dict.set(params, "Username", Js.Json.string(username));
+  //   "ClientMetadata": {
+  //     "string": "string",
+  //   },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  //   "ConfirmationCode": "string",
   Js.Dict.set(params, "ConfirmationCode", Js.Json.string(confirmationCode));
 
+  //   "ForceAliasCreation": boolean,
+  Js.Dict.set(
+    params,
+    "ForceAliasCreation",
+    Js.Json.boolean(forceAliasCreation),
+  );
+
+  //   "SecretHash": "string",
+  switch (secretHash) {
+  | Some(secretHash) =>
+    Js.Dict.set(params, "SecretHash", Js.Json.boolean(secretHash))
+  | None => ()
+  };
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+
+  //   "Username": "string",
+  Js.Dict.set(params, "Username", Js.Json.string(username));
+  // };
+
   Client.request(config, ConfirmSignUp, params)
-  ->Future.flatMapOk(res =>
+  ->Future.flatMapOk(({status, json}) =>
       Future.value(
-        switch (res.status) {
-        | Success(_) => Belt.Result.Ok(res)
+        switch (status) {
+        | Success(_) => Belt.Result.Ok()
         | Informational(_)
         | Redirect(_)
         | ClientError(_)
         | ServerError(_) =>
-          Belt.Result.Error(
-            switch (parseCognitoError(res.json)) {
-            | Some(err) => makeConfirmError(err.__type, err.message)
-            | None => `CognitoDeserializeError(res.json)
-            },
-          )
+          Belt.Result.Error(Errors.ConfirmSignUp.makeFromJson(json))
         },
       )
     );
 };
 
-type signInExceptions = [ | `NotAuthorizedException(string)];
+let initiateAuth =
+    (
+      config,
+      ~authParameters,
+      ~authFlow,
+      ~clientMetadata=?,
+      ~analyticsEndpointId=?,
+      (),
+    ) => {
+  // https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html
 
-let initiateAuth = (config, ~username: string, ~password: string, ()) => {
-  let authParams = Js.Dict.empty();
-  Js.Dict.set(authParams, "USERNAME", Js.Json.string(username));
-  Js.Dict.set(authParams, "PASSWORD", Js.Json.string(password));
+  open Config;
 
   let params = Js.Dict.empty();
-  Js.Dict.set(params, "AuthParameters", Js.Json.object_(authParams));
-  Js.Dict.set(params, "AuthFlow", Js.Json.string("USER_PASSWORD_AUTH"));
+  //   {
+  //    "AnalyticsMetadata": {
+  //       "AnalyticsEndpointId": "string"
+  //    },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  //    "AuthFlow": "string",
+  Js.Dict.set(params, "AuthFlow", AuthenticationFlowType.toJson(authFlow));
+
+  //    "AuthParameters": {
+  //       "string" : "string"
+  //    },
+  // TODO: Make this type smarter (certain auth flows have required AuthParameters)
+  Js.Dict.set(
+    params,
+    "AuthParameters",
+    Js.Json.object_(makeJsonStringsFromDictValues(authParameters)),
+  );
+
+  //    "ClientId": "string", <- from client config
+  //    "ClientMetadata": {
+  //       "string" : "string"
+  //    },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //    "UserContextData": {
+  //       "EncodedData": "string"
+  //    }
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+  // }
+
   Client.request(config, InitiateAuth, params)
-  ->Future.flatMapOk(res =>
+  ->Future.flatMapOk(({status, json}) =>
       Future.value(
-        switch (res.status) {
+        switch (status) {
         | Success(_) =>
-          // We're _really_ hoping amazon holds to their API contract here.
-          // If not, we're going to see null type errors.
-          let signInResponse = makeSignInResponse(res);
-          let authDecoder = signInResponse->authenticationResultDecoderGet;
-          let authenticationResult = {
-            accessToken: authDecoder->accessTokenGet,
-            idToken: authDecoder->idTokenGet,
-            refreshToken: authDecoder->refreshTokenGet,
-            tokenType: authDecoder->tokenTypeGet,
-            expiresIn: authDecoder->expiresInGet,
-          };
-          Belt.Result.Ok({
-            authenticationResult,
-            challengeParameters: signInResponse->challengeParametersGet,
-          });
+          Belt.Result.Ok(CognitoJson_bs.read_authenticationResponse(json))
         | Informational(_)
         | Redirect(_)
         | ClientError(_)
         | ServerError(_) =>
-          Belt.Result.Error(
-            parseCognitoError(res.json)
-            ->Belt.Option.mapWithDefault(
-                `CognitoUnknownError("temp error"), err =>
-                switch (err.__type) {
-                | "InvalidParameterException" =>
-                  `CognitoInvalidParameter(err.message)
-                | "NotAuthorizedException" =>
-                  `CognitoNotAuthorized(err.message)
-                | _ => `CognitoUnknownError(err.message)
-                }
-              ),
-          )
+          Belt.Result.Error(Errors.InitiateAuth.makeFromJson(json))
+        },
+      )
+    );
+};
+
+let changePassword =
+    (
+      config,
+      ~accessToken: string,
+      ~previousPassword: string,
+      ~proposedPassword: string,
+      (),
+    ) => {
+  let params = Js.Dict.empty();
+  Js.Dict.set(params, "AccessToken", Js.Json.string(accessToken));
+  Js.Dict.set(params, "PreviousPassword", Js.Json.string(previousPassword));
+  Js.Dict.set(params, "ProposedPassword", Js.Json.string(proposedPassword));
+
+  Client.request(config, ChangePassword, params)
+  ->Future.flatMapOk(({status, json}) =>
+      Future.value(
+        switch (status) {
+        | Success(_) => Belt.Result.Ok()
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(Errors.ChangePassword.makeFromJson(json))
+        },
+      )
+    );
+};
+
+let confirmForgotPassword =
+    (
+      config,
+      ~username,
+      ~password,
+      ~confirmationCode,
+      ~analyticsEndpointId=?,
+      ~clientMetadata=?,
+      (),
+    ) => {
+  let params = Js.Dict.empty();
+  //   {
+  //    "AnalyticsMetadata": {
+  //       "AnalyticsEndpointId": "string"
+  //    },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  //    "ClientId": "string", <- from client config
+  //    "ClientMetadata": {
+  //       "string" : "string"
+  //    },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  //    "ConfirmationCode": "string",
+  Js.Dict.set(params, "ConfirmationCode", Js.Json.string(confirmationCode));
+
+  //    "Password": "string",
+  Js.Dict.set(params, "Password", Js.Json.string(password));
+
+  // ====Unimplemented=========
+  //    "SecretHash": "string",
+  // ====End Unimplemented=====
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+
+  //    "Username": "string"
+  Js.Dict.set(params, "Username", Js.Json.string(username));
+  // }
+
+  Client.request(config, ConfirmForgotPassword, params)
+  ->Future.flatMapOk(({status, json}) =>
+      Future.value(
+        switch (status) {
+        | Success(_) => Belt.Result.Ok()
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(Errors.ConfirmForgotPassword.makeFromJson(json))
+        },
+      )
+    );
+};
+
+let forgotPassword =
+    (config, ~username, ~analyticsEndpointId=?, ~clientMetadata=?, ()) => {
+  let params = Js.Dict.empty();
+  //   {
+  //    "AnalyticsMetadata": {
+  //       "AnalyticsEndpointId": "string"
+  //    },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  //    "ClientId": "string", <- from config
+  //    "ClientMetadata": {
+  //       "string" : "string"
+  //    },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  // ====Unimplemented=========
+  //    "SecretHash": "string",
+  // ====End Unimplemented=====
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+
+  //    "Username": "string"
+  Js.Dict.set(params, "Username", Js.Json.string(username));
+  // }
+
+  Client.request(config, ForgotPassword, params)
+  ->Future.flatMapOk(({status, json}) =>
+      Future.value(
+        switch (status) {
+        | Success(_) =>
+          Belt.Result.Ok(CognitoJson_bs.read_codeDeliveryResponse(json))
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(Errors.ForgotPassword.makeFromJson(json))
+        },
+      )
+    );
+};
+
+let resendConfirmationCode =
+    (config, ~username, ~analyticsEndpointId=?, ~clientMetadata=?, ()) => {
+  let params = Js.Dict.empty();
+  //   {
+  //    "AnalyticsMetadata": {
+  //       "AnalyticsEndpointId": "string"
+  //    },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  //    "ClientId": "string", <- from config
+  //    "ClientMetadata": {
+  //       "string" : "string"
+  //    },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  // ====Unimplemented=========
+  //    "SecretHash": "string",
+  // ====End Unimplemented=====
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+
+  //    "Username": "string"
+  Js.Dict.set(params, "Username", Js.Json.string(username));
+  // }
+
+  Client.request(config, ResendConfirmationCode, params)
+  ->Future.flatMapOk(({status, json}) =>
+      Future.value(
+        switch (status) {
+        | Success(_) =>
+          Belt.Result.Ok(CognitoJson_bs.read_codeDeliveryResponse(json))
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(Errors.ResendConfirmationCode.makeFromJson(json))
+        },
+      )
+    );
+};
+
+let respondToAuthChallenge =
+    (
+      config,
+      ~challengeName: CognitoJson_bs.challengeName,
+      ~challengeResponses=?,
+      ~session=?,
+      ~analyticsEndpointId=?,
+      ~clientMetadata=?,
+      (),
+    ) => {
+  let params = Js.Dict.empty();
+  //   {
+  //    "AnalyticsMetadata": {
+  //       "AnalyticsEndpointId": "string"
+  //    },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  //  "ChallengeName": "string",
+  Js.Dict.set(
+    params,
+    "ChallengeName",
+    CognitoJson_bs.write_challengeName(challengeName),
+  );
+  // "ChallengeResponses": {
+  //     "string" : "string"
+  //  },
+  switch (challengeResponses) {
+  | Some(data) =>
+    Js.Dict.set(params, "ChallengeResponses", Js.Json.object_(data))
+  | None => ()
+  };
+  //    "ClientId": "string", <- from config
+  //    "ClientMetadata": {
+  //       "string" : "string"
+  //    },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  //    "Session": "string"
+  switch (session) {
+  | Some(data) => Js.Dict.set(params, "Session", Js.Json.string(data))
+  | None => ()
+  };
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+  // }
+
+  Client.request(config, RespondToAuthChallenge, params)
+  ->Future.flatMapOk(({status, json}) =>
+      Future.value(
+        switch (status) {
+        | Success(_) =>
+          Belt.Result.Ok(CognitoJson_bs.read_authenticationResponse(json))
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(Errors.RespondToAuthChallenge.makeFromJson(json))
         },
       )
     );

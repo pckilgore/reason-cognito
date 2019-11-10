@@ -4,7 +4,7 @@
 var Future = require("reason-future/src/Future.bs.js");
 var Cognito = require("./Cognito.bs.js");
 
-var auth = Cognito.makeConfig("us-east-2_pTFKTGtS3", "3vjshpa4lgf92nfisjrg9os21a", /* UsEast2 */1, undefined, /* () */0);
+var auth = Cognito.Config.make("us-east-2_pTFKTGtS3", "3vjshpa4lgf92nfisjrg9os21a", /* UsEast2 */1, undefined, /* () */0);
 
 var emailAttribute = { };
 
@@ -12,24 +12,17 @@ emailAttribute["Name"] = "email";
 
 emailAttribute["Value"] = "reasoncog@pck.email";
 
-var testRequest = Future.tapError(Future.tapOk(Cognito.signUp(auth, "sarah6", "Password12345@", /* array */[emailAttribute], undefined, /* () */0), (function (value) {
-            console.log("OK", value);
+var accessToken = "eyJraWQiOiJoNzdxa1lvSHJMS1Q4OXFwSE1PYkJIQjlRUlJxdDJDZzJsckJpeGlrQUJrPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI4NzMzNTE4NC04YTc3LTRkZmEtOTVlYy1jYzJhZjk5Njc3YmYiLCJldmVudF9pZCI6IjA3NGM2ODkwLTJkYTYtNDNmYi1iODI2LWI1MTc5OGU2MWIzNyIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYXdzLmNvZ25pdG8uc2lnbmluLnVzZXIuYWRtaW4iLCJhdXRoX3RpbWUiOjE1NzMzNTkzMTMsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTIuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0yX3BURktUR3RTMyIsImV4cCI6MTU3MzM2MjkxMywiaWF0IjoxNTczMzU5MzEzLCJqdGkiOiI4MDMzZGZjZC1lYmJkLTQ2YTYtYTRmYy0xYmEyNTEzMzVhZmQiLCJjbGllbnRfaWQiOiIzdmpzaHBhNGxnZjkybmZpc2pyZzlvczIxYSIsInVzZXJuYW1lIjoic2FyYWg3In0.TnLBu8efWwKgviuCp2RwYhCAXGeLYsXAwJn7AM1iK_NTiDD0ClcRTg-lbmIOnSXAlunbZDXdSAMC6nlZDe4M9C4FS_bn-Zc7oE--VjilylchRQLv3wnwXSX9BLZo1rZ4fCZEiyu7lzZZjlPpZ29gg2ICvniScC75TcbfPATma429uTYc9n0mkslmPBmX1s7aaMq1BxUOqKPVp1C41U6KWAP2R6GD4l8nM1HxAPszGUfeB1IqINGis59LgpJvv0sikkBi5RNoDhttkpjfYpqpidWOvz001GZfPMQhKxKoGAaWcueU-Ijlt5ycLjcY7e8KlO2DQ49D17xvGhXmT2Kk5Q";
+
+Future.tapError(Future.tapOk(Cognito.changePassword(auth, accessToken, "Password12345@", "Password12345@!", /* () */0), (function (param) {
+            console.log("Success!!!!");
             return /* () */0;
-          })), (function (value) {
-        console.log("err", value);
+          })), (function (param) {
+        console.log("Oh shit");
         return /* () */0;
       }));
 
-var emailAttribute$1 = { };
-
-emailAttribute$1["Name"] = "email";
-
-emailAttribute$1["Value"] = "aa.rmand.in.box@gmail.com";
-
-var confirmSignUp = Cognito.confirmSignUp(auth, "sometestuser3", "301529", /* () */0);
-
 exports.auth = auth;
-exports.testRequest = testRequest;
-exports.emailAttribute = emailAttribute$1;
-exports.confirmSignUp = confirmSignUp;
+exports.emailAttribute = emailAttribute;
+exports.accessToken = accessToken;
 /* auth Not a pure module */

@@ -2,11 +2,15 @@
   "name": "reason-cognito",
   "version": "0.1.0",
   "scripts": {
-    "clean": "bsb -clean-world",
-    "build": "bsb -make-world",
-    "start": "bsb -make-world -w",
+    "clean": "yarn bsb -clean-world",
+    "build": "yarn bsb -make-world",
+    "start": "yarn bsb -make-world -w",
     "test": "node src/Scratch.bs.js",
-    "ci": "yarn build && yarn test"
+    "ci": "yarn build && yarn test",
+    "generate-types": "node bin/atdgen.js -t src/atd/CognitoJson.atd",
+    "generate-serde": "node bin/atdgen.js -bs src/atd/CognitoJson.atd",
+    "codegen": "yarn generate-types && yarn generate-serde",
+    "postinstall": "yarn codegen"
   },
   "keywords": [
     "BuckleScript"
@@ -14,10 +18,11 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "bs-platform": "^5.2.0",
+    "bs-platform": "6.2.1",
     "serve": "^11.1.0"
   },
   "dependencies": {
+    "@ahrefs/bs-atdgen-codec-runtime": "^2.0.0",
     "bs-fetch": "^0.5.0",
     "isomorphic-fetch": "^2.2.1",
     "reason-future": "^2.5.0"
