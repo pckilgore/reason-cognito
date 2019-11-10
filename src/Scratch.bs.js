@@ -12,28 +12,17 @@ emailAttribute["Name"] = "email";
 
 emailAttribute["Value"] = "reasoncog@pck.email";
 
-var authParameters = { };
+var accessToken = "eyJraWQiOiJoNzdxa1lvSHJMS1Q4OXFwSE1PYkJIQjlRUlJxdDJDZzJsckJpeGlrQUJrPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI4NzMzNTE4NC04YTc3LTRkZmEtOTVlYy1jYzJhZjk5Njc3YmYiLCJldmVudF9pZCI6IjA3NGM2ODkwLTJkYTYtNDNmYi1iODI2LWI1MTc5OGU2MWIzNyIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYXdzLmNvZ25pdG8uc2lnbmluLnVzZXIuYWRtaW4iLCJhdXRoX3RpbWUiOjE1NzMzNTkzMTMsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTIuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0yX3BURktUR3RTMyIsImV4cCI6MTU3MzM2MjkxMywiaWF0IjoxNTczMzU5MzEzLCJqdGkiOiI4MDMzZGZjZC1lYmJkLTQ2YTYtYTRmYy0xYmEyNTEzMzVhZmQiLCJjbGllbnRfaWQiOiIzdmpzaHBhNGxnZjkybmZpc2pyZzlvczIxYSIsInVzZXJuYW1lIjoic2FyYWg3In0.TnLBu8efWwKgviuCp2RwYhCAXGeLYsXAwJn7AM1iK_NTiDD0ClcRTg-lbmIOnSXAlunbZDXdSAMC6nlZDe4M9C4FS_bn-Zc7oE--VjilylchRQLv3wnwXSX9BLZo1rZ4fCZEiyu7lzZZjlPpZ29gg2ICvniScC75TcbfPATma429uTYc9n0mkslmPBmX1s7aaMq1BxUOqKPVp1C41U6KWAP2R6GD4l8nM1HxAPszGUfeB1IqINGis59LgpJvv0sikkBi5RNoDhttkpjfYpqpidWOvz001GZfPMQhKxKoGAaWcueU-Ijlt5ycLjcY7e8KlO2DQ49D17xvGhXmT2Kk5Q";
 
-authParameters["USERNAME"] = "sarah7";
-
-authParameters["PASSWORD"] = "Password12345@";
-
-Future.tapError(Future.tapOk(Cognito.initiateAuth(auth, authParameters, /* USER_PASSWORD_AUTH */0, undefined, undefined, /* () */0), (function (value) {
-            console.log("result", value[/* authenticationResult */0]);
-            var match = value[/* challengeName */1];
-            if (match !== undefined) {
-              console.log(match);
-            } else {
-              console.log("No challenge name");
-            }
-            console.log("params", value[/* challengeParameters */2]);
+Future.tapError(Future.tapOk(Cognito.changePassword(auth, accessToken, "Password12345@", "Password12345@!", /* () */0), (function (param) {
+            console.log("Success!!!!");
             return /* () */0;
-          })), (function (value) {
-        console.log("err", value);
+          })), (function (param) {
+        console.log("Oh shit");
         return /* () */0;
       }));
 
 exports.auth = auth;
 exports.emailAttribute = emailAttribute;
-exports.authParameters = authParameters;
+exports.accessToken = accessToken;
 /* auth Not a pure module */

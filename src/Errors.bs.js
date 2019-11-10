@@ -220,8 +220,57 @@ var InitiateAuth = {
   makeFromJson: makeFromJson$3
 };
 
+function make$4(param) {
+  var message = param[/* message */1];
+  switch (param[/* __type */0]) {
+    case "InvalidPasswordException" :
+        return /* `CognitoInvalidPassword */[
+                -17702879,
+                message
+              ];
+    case "LimitExceededException" :
+        return /* `CognitoLimitExceeded */[
+                767083101,
+                message
+              ];
+    case "PasswordResetRequiredException" :
+        return /* `CognitoPasswordResetRequired */[
+                959433314,
+                message
+              ];
+    case "UserNotConfirmedException" :
+        return /* `CognitoUserNotConfirmed */[
+                937418472,
+                message
+              ];
+    case "UserNotFoundException" :
+        return /* `CognitoUserNotFound */[
+                376697675,
+                message
+              ];
+    default:
+      return /* ReasonCognitoUnknownError */536808491;
+  }
+}
+
+function makeFromJson$4(json) {
+  var err = Curry._1(CognitoJson_bs.read_error, json);
+  var match = make(err);
+  if (match !== undefined) {
+    return match;
+  } else {
+    return make$4(err);
+  }
+}
+
+var ChangePassword = {
+  make: make$4,
+  makeFromJson: makeFromJson$4
+};
+
 exports.Common = Common;
 exports.ConfirmSignUp = ConfirmSignUp;
 exports.SignUpErrors = SignUpErrors;
 exports.InitiateAuth = InitiateAuth;
+exports.ChangePassword = ChangePassword;
 /* CognitoJson_bs Not a pure module */

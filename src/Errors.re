@@ -15,8 +15,8 @@ module Common = {
 
   let make = ({__type, message}: CognitoJson_bs.error) =>
     switch (__type) {
-    | "InvalidParameterException" => Some(`CognitoInvalidParameter(message))
     | "InternalErrorException" => Some(`CognitoInternalError(message))
+    | "InvalidParameterException" => Some(`CognitoInvalidParameter(message))
     | "InvalidLambdaResponseException" =>
       Some(`CognitoInvalidLambdaResponse(message))
     | "NotAuthorizedException" => Some(`CognitoNotAuthorized(message))
@@ -115,6 +115,35 @@ module InitiateAuth = {
       `CognitoInvalidSmsRoleTrustRelationship(message)
     | "InvalidUserPoolConfigurationException" =>
       `CognitoInvalidUserPoolConfiguration(message)
+    | "PasswordResetRequiredException" =>
+      `CognitoPasswordResetRequired(message)
+    | "UserNotConfirmedException" => `CognitoUserNotConfirmed(message)
+    | "UserNotFoundException" => `CognitoUserNotFound(message)
+    | _ => `ReasonCognitoUnknownError
+    };
+
+  let makeFromJson = json => {
+    let err = CognitoJson_bs.read_error(json);
+    switch (Common.make(err)) {
+    | Some(commonError) => commonError
+    | None => make(err)
+    };
+  };
+};
+
+module ChangePassword = {
+  type t = [
+    | `CognitoInvalidPassword(apiErrorMessage)
+    | `CognitoLimitExceeded(apiErrorMessage)
+    | `CognitoPasswordResetRequired(apiErrorMessage)
+    | `CognitoUserNotConfirmed(apiErrorMessage)
+    | `CognitoUserNotFound(apiErrorMessage)
+  ];
+
+  let make = ({__type, message}: CognitoJson_bs.error) =>
+    switch (__type) {
+    | "InvalidPasswordException" => `CognitoInvalidPassword(message)
+    | "LimitExceededException" => `CognitoLimitExceeded(message)
     | "PasswordResetRequiredException" =>
       `CognitoPasswordResetRequired(message)
     | "UserNotConfirmedException" => `CognitoUserNotConfirmed(message)

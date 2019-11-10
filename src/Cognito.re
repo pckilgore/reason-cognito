@@ -382,7 +382,7 @@ let initiateAuth =
   //    }
   // ^^ADVANCED SECURITY UNIMPLEMENTED^^
   // }
-  Js.log(params);
+
   Client.request(config, InitiateAuth, params)
   ->Future.flatMapOk(({status, json}) =>
       Future.value(
@@ -394,6 +394,34 @@ let initiateAuth =
         | ClientError(_)
         | ServerError(_) =>
           Belt.Result.Error(Errors.InitiateAuth.makeFromJson(json))
+        },
+      )
+    );
+};
+
+let changePassword =
+    (
+      config,
+      ~accessToken: string,
+      ~previousPassword: string,
+      ~proposedPassword: string,
+      (),
+    ) => {
+  let params = Js.Dict.empty();
+  Js.Dict.set(params, "AccessToken", Js.Json.string(accessToken));
+  Js.Dict.set(params, "PreviousPassword", Js.Json.string(previousPassword));
+  Js.Dict.set(params, "ProposedPassword", Js.Json.string(proposedPassword));
+
+  Client.request(config, ChangePassword, params)
+  ->Future.flatMapOk(({status, json}) =>
+      Future.value(
+        switch (status) {
+        | Success(_) => Belt.Result.Ok()
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(Errors.ChangePassword.makeFromJson(json))
         },
       )
     );

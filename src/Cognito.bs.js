@@ -206,11 +206,22 @@ function initiateAuth(config, authParameters, authFlow, clientMetadata, analytic
   if (clientMetadata !== undefined) {
     params["ClientMetadata"] = Caml_option.valFromOption(clientMetadata);
   }
-  console.log(params);
   return Future.flatMapOk(request(config, /* InitiateAuth */8, params), (function (param) {
                 var json = param[/* json */1];
                 var tmp;
                 tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_initiateAuthResponse, json)]) : /* Error */Block.__(1, [Errors.InitiateAuth.makeFromJson(json)]);
+                return Future.value(tmp);
+              }));
+}
+
+function changePassword(config, accessToken, previousPassword, proposedPassword, param) {
+  var params = { };
+  params["AccessToken"] = accessToken;
+  params["PreviousPassword"] = previousPassword;
+  params["ProposedPassword"] = proposedPassword;
+  return Future.flatMapOk(request(config, /* ChangePassword */4, params), (function (param) {
+                var tmp;
+                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ChangePassword.makeFromJson(param[/* json */1])]);
                 return Future.value(tmp);
               }));
 }
@@ -220,4 +231,5 @@ exports.Client = Client;
 exports.signUp = signUp;
 exports.confirmSignUp = confirmSignUp;
 exports.initiateAuth = initiateAuth;
+exports.changePassword = changePassword;
 /*  Not a pure module */
