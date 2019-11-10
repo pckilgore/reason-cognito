@@ -16,9 +16,9 @@ module Common = {
   let make = ({__type, message}: CognitoJson_bs.error) =>
     switch (__type) {
     | "InternalErrorException" => Some(`CognitoInternalError(message))
-    | "InvalidParameterException" => Some(`CognitoInvalidParameter(message))
     | "InvalidLambdaResponseException" =>
       Some(`CognitoInvalidLambdaResponse(message))
+    | "InvalidParameterException" => Some(`CognitoInvalidParameter(message))
     | "NotAuthorizedException" => Some(`CognitoNotAuthorized(message))
     | "ResourceNotFoundException" => Some(`CognitoResourceNotFound(message))
     | "TooManyRequestsException" => Some(`CognitoTooManyRequests(message))
@@ -146,6 +146,39 @@ module ChangePassword = {
     | "LimitExceededException" => `CognitoLimitExceeded(message)
     | "PasswordResetRequiredException" =>
       `CognitoPasswordResetRequired(message)
+    | "UserNotConfirmedException" => `CognitoUserNotConfirmed(message)
+    | "UserNotFoundException" => `CognitoUserNotFound(message)
+    | _ => `ReasonCognitoUnknownError
+    };
+
+  let makeFromJson = json => {
+    let err = CognitoJson_bs.read_error(json);
+    switch (Common.make(err)) {
+    | Some(commonError) => commonError
+    | None => make(err)
+    };
+  };
+};
+
+module ConfirmForgotPassword = {
+  type t = [
+    | `CognitoCodeMismatch(apiErrorMessage)
+    | `CognitoExpiredCode(apiErrorMessage)
+    | `CognitoInvalidPassword(apiErrorMessage)
+    | `CognitoLimitExceeded(apiErrorMessage)
+    | `CognitoTooManyFailedAttempts(apiErrorMessage)
+    | `CognitoUserNotConfirmed(apiErrorMessage)
+    | `CognitoUserNotFound(apiErrorMessage)
+  ];
+
+  let make = ({__type, message}: CognitoJson_bs.error) =>
+    switch (__type) {
+    | "CodeMismatchException" => `CognitoCodeMismatch(message)
+    | "ExpiredCodeException" => `CognitoExpiredCode(message)
+    | "InvalidPasswordException" => `CognitoInvalidPassword(message)
+    | "LimitExceededException" => `CognitoLimitExceeded(message)
+    | "TooManyFailedAttemptsException" =>
+      `CognitoTooManyFailedAttempts(message)
     | "UserNotConfirmedException" => `CognitoUserNotConfirmed(message)
     | "UserNotFoundException" => `CognitoUserNotFound(message)
     | _ => `ReasonCognitoUnknownError

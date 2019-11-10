@@ -426,3 +426,68 @@ let changePassword =
       )
     );
 };
+
+let confirmForgotPassword =
+    (
+      config,
+      ~username,
+      ~password,
+      ~confirmationCode,
+      ~analyticsEndpointId=?,
+      ~clientMetadata=?,
+      (),
+    ) => {
+  let params = Js.Dict.empty();
+  //   {
+  //    "AnalyticsMetadata": {
+  //       "AnalyticsEndpointId": "string"
+  //    },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  //    "ClientId": "string", <- from client config
+  //    "ClientMetadata": {
+  //       "string" : "string"
+  //    },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  //    "ConfirmationCode": "string",
+  Js.Dict.set(params, "ConfirmationCode", Js.Json.string(confirmationCode));
+
+  //    "Password": "string",
+  Js.Dict.set(params, "Password", Js.Json.string(password));
+
+  // ====Unimplemented=========
+  //    "SecretHash": "string",
+  // ====End Unimplemented=====
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+
+  //    "Username": "string"
+  Js.Dict.set(params, "Username", Js.Json.string(username));
+  // }
+
+  Client.request(config, ConfirmForgotPassword, params)
+  ->Future.flatMapOk(({status, json}) =>
+      Future.value(
+        switch (status) {
+        | Success(_) => Belt.Result.Ok()
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(Errors.ConfirmForgotPassword.makeFromJson(json))
+        },
+      )
+    );
+};

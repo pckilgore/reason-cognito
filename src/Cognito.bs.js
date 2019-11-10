@@ -226,10 +226,29 @@ function changePassword(config, accessToken, previousPassword, proposedPassword,
               }));
 }
 
+function confirmForgotPassword(config, username, password, confirmationCode, analyticsEndpointId, clientMetadata, param) {
+  var params = { };
+  if (analyticsEndpointId !== undefined) {
+    params["AnalyticsMetadata"] = Caml_option.valFromOption(analyticsEndpointId);
+  }
+  if (clientMetadata !== undefined) {
+    params["ClientMetadata"] = Caml_option.valFromOption(clientMetadata);
+  }
+  params["ConfirmationCode"] = confirmationCode;
+  params["Password"] = password;
+  params["Username"] = username;
+  return Future.flatMapOk(request(config, /* ConfirmForgotPassword */7, params), (function (param) {
+                var tmp;
+                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ConfirmForgotPassword.makeFromJson(param[/* json */1])]);
+                return Future.value(tmp);
+              }));
+}
+
 exports.Config = Config;
 exports.Client = Client;
 exports.signUp = signUp;
 exports.confirmSignUp = confirmSignUp;
 exports.initiateAuth = initiateAuth;
 exports.changePassword = changePassword;
+exports.confirmForgotPassword = confirmForgotPassword;
 /*  Not a pure module */
