@@ -75,9 +75,3 @@ let makeSignupResponse = json => {
   | None => None
   };
 };
-
-let jsonMapString = arr =>
-  Array.map(
-    item => Js.Dict.map((. value) => Js.Json.string(value), item),
-    arr,
-  );

@@ -2,6 +2,18 @@
 # yarn lockfile v1
 
 
+"@ahrefs/bs-atdgen-codec-runtime@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.npmjs.org/@ahrefs/bs-atdgen-codec-runtime/-/bs-atdgen-codec-runtime-2.0.0.tgz#f6a8e868c8cf7f005e8cb6a07c952b3ca2860c4b"
+  integrity sha512-taWYj3FfopwZ4X0R1JPpUQ8NWkz2s16P9OhCubYVSgC+/OPfic7XcW4bgiivBNgAKE+XJZJ3+cHlSLNxKuT9Xg==
+  dependencies:
+    "@glennsl/bs-json" "^5.0.0"
+
+"@glennsl/bs-json@^5.0.0":
+  version "5.0.1"
+  resolved "https://registry.npmjs.org/@glennsl/bs-json/-/bs-json-5.0.1.tgz#b19d0b45f4a80d52e6bfefa032ac99f4548f3083"
+  integrity sha512-tDxqeO4LCUz3HIwsdqyM4OIUk/bIV8QwDuhNbqy3hHIVEciePbJXTSyXMKsoIFs3ukQY8ZsQXskONtOK4TyLfA==
+
 "@zeit/schemas@2.6.0":
   version "2.6.0"
   resolved "https://registry.yarnpkg.com/@zeit/schemas/-/schemas-2.6.0.tgz#004e8e553b4cd53d538bd38eac7bcbf58a867fe3"
@@ -85,10 +97,10 @@ bs-fetch@^0.5.0:
   resolved "https://registry.npmjs.org/bs-fetch/-/bs-fetch-0.5.0.tgz#6913b1d1ddfa0b0a4b832357854e9763d61d4b28"
   integrity sha512-cGjwRpyNcIaX+p2ssy/38zs7BM/miKNgmOR3NEhxKFete5mR05JcvjuV4raG89oGCG281SU1b56TTAKmf9VCug==
 
-bs-platform@^5.2.0:
-  version "5.2.0"
-  resolved "https://registry.yarnpkg.com/bs-platform/-/bs-platform-5.2.0.tgz#0ec317273daed573491c105f68ea48826a285b7a"
-  integrity sha512-miyePsOF9VbuhT5QD5E/hb+l454Fo4MAcg5xV1GJhbWxmejuF/X7mCYUsNrK1UUAaYt8hnoyFdeLG22sxVta9A==
+bs-platform@6.2.1:
+  version "6.2.1"
+  resolved "https://registry.npmjs.org/bs-platform/-/bs-platform-6.2.1.tgz#30266c7f23a3b323e1fc9596a9a6eb9f053981b4"
+  integrity sha512-FmQ8kYV52A0Y302qh6o0/J9TO+kHzsjGQnsjrg/ONUYIY/jWzBnt9dCBO6EBnaEKfFJLqk5JrUDCxuihqtTcnw==
 
 bytes@3.0.0:
   version "3.0.0"

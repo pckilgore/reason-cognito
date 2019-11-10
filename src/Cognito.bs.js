@@ -2,29 +2,116 @@
 'use strict';
 
 var Block = require("bs-platform/lib/js/block.js");
+var Curry = require("bs-platform/lib/js/curry.js");
 var Fetch = require("bs-fetch/src/Fetch.js");
-var Serde = require("./Serde.bs.js");
-var Types = require("./Types.bs.js");
+var Utils = require("./Utils.bs.js");
+var Errors = require("./Errors.bs.js");
 var Future = require("reason-future/src/Future.bs.js");
 var FutureJs = require("reason-future/src/FutureJs.bs.js");
-var Belt_Option = require("bs-platform/lib/js/belt_Option.js");
 var Caml_option = require("bs-platform/lib/js/caml_option.js");
+var CognitoJson_bs = require("./atd/CognitoJson_bs.bs.js");
 
 ((require('isomorphic-fetch')));
 
-function makeConfig(poolId, clientId, region, $staropt$star, param) {
+function toString(param) {
+  switch (param) {
+    case /* USER_PASSWORD_AUTH */0 :
+        return "USER_PASSWORD_AUTH";
+    case /* USER_SRP_AUTH */1 :
+        return "USER_SRP_AUTH";
+    case /* CUSTOM_AUTH */2 :
+        return "CUSTOM_AUTH";
+    
+  }
+}
+
+var toJson = toString;
+
+var AuthenticationFlowType = {
+  toString: toString,
+  toJson: toJson
+};
+
+function toString$1(param) {
+  switch (param) {
+    case /* UsEast1 */0 :
+        return "us-east-1";
+    case /* UsEast2 */1 :
+        return "us-east-2";
+    case /* UsWest2 */2 :
+        return "us-west-2";
+    case /* ApSouth1 */3 :
+        return "ap-south-1";
+    case /* ApNortheast1 */4 :
+    case /* ApNortheast2 */5 :
+        return "ap-northeast-2";
+    case /* ApSoutheast1 */6 :
+        return "ap-southeast-1";
+    case /* ApSoutheast2 */7 :
+        return "ap-southeast-2";
+    case /* CaCentral1 */8 :
+        return "ca-central-1";
+    case /* EuCentral1 */9 :
+        return "eu-central-1";
+    case /* EuWest1 */10 :
+        return "eu-west-1";
+    case /* EuWest2 */11 :
+        return "eu-west-2";
+    
+  }
+}
+
+var Region = {
+  toString: toString$1
+};
+
+function make(poolId, clientId, region, $staropt$star, param) {
   var authenticationFlowType = $staropt$star !== undefined ? $staropt$star : /* USER_SRP_AUTH */1;
   return /* record */[
           /* poolId */poolId,
           /* clientId */clientId,
-          /* endpoint */"https://cognito-idp." + (Types.makeRegionString(region) + ".amazonaws.com/"),
+          /* endpoint */"https://cognito-idp." + (toString$1(region) + ".amazonaws.com/"),
           /* authenticationFlowType */authenticationFlowType
         ];
 }
 
+var Config = {
+  AuthenticationFlowType: AuthenticationFlowType,
+  Region: Region,
+  make: make
+};
+
+function toString$2(param) {
+  switch (param) {
+    case /* SignUp */0 :
+        return "SignUp";
+    case /* SignIn */1 :
+        return "SignIn";
+    case /* SignOut */2 :
+        return "SignOut";
+    case /* ConfirmSignUp */3 :
+        return "ConfirmSignUp";
+    case /* ChangePassword */4 :
+        return "ChangePassword";
+    case /* RespondToAuthChallenge */5 :
+        return "RespondToAuthChallenge";
+    case /* ForgotPassword */6 :
+        return "ForgotPassword";
+    case /* ConfirmForgotPassword */7 :
+        return "ConfirmForgotPassword";
+    case /* InitiateAuth */8 :
+        return "InitiateAuth";
+    
+  }
+}
+
+var Operation = {
+  toString: toString$2
+};
+
 function request(config, operation, params) {
   var headers = { };
-  var target = "AWSCognitoIdentityProviderService." + Types.makeOperationString(operation);
+  var target = "AWSCognitoIdentityProviderService." + toString$2(operation);
   headers["X-Amz-Target"] = target;
   headers["Content-Type"] = "application/x-amz-json-1.1";
   headers["X-Amz-User-Agent"] = "reason-cognito/0.1.x js";
@@ -58,6 +145,7 @@ function request(config, operation, params) {
 }
 
 var Client = {
+  Operation: Operation,
   request: request
 };
 
@@ -75,21 +163,13 @@ function signUp(config, username, password, $staropt$star, $staropt$star$1, anal
   if (secretHash !== undefined) {
     params["SecretHash"] = secretHash;
   }
-  params["UserAttributes"] = Serde.jsonMapString(attributes);
+  params["UserAttributes"] = Utils.jsonMapString(attributes);
   params["Username"] = username;
-  params["ValidationData"] = Serde.jsonMapString(validationData);
+  params["ValidationData"] = Utils.jsonMapString(validationData);
   return Future.flatMapOk(request(config, /* SignUp */0, params), (function (res) {
                 var match = res[/* status */0];
                 var tmp;
-                if (match.tag === /* Success */1) {
-                  var match$1 = Serde.makeSignupResponse(res[/* json */1]);
-                  tmp = match$1 !== undefined ? /* Ok */Block.__(0, [match$1]) : /* Error */Block.__(1, [/* `ReasonCognitoSerdeError */[
-                          521507828,
-                          res[/* json */1]
-                        ]]);
-                } else {
-                  tmp = /* Error */Block.__(1, [Serde.makeErrKind(res[/* json */1], Types.makeSignUpErrors)]);
-                }
+                tmp = match.tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_signUpResponse, res[/* json */1])]) : /* Error */Block.__(1, [Errors.SignUpErrors.makeFromJson(res[/* json */1])]);
                 return Future.value(tmp);
               }));
 }
@@ -109,73 +189,33 @@ function confirmSignUp(config, username, confirmationCode, $staropt$star, secret
     params["SecretHash"] = secretHash;
   }
   params["Username"] = username;
-  return Future.flatMapOk(request(config, /* ConfirmSignUp */3, params), (function (res) {
-                var match = res[/* status */0];
+  return Future.flatMapOk(request(config, /* ConfirmSignUp */3, params), (function (param) {
                 var tmp;
-                tmp = match.tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Serde.makeErrKind(res[/* json */1], Types.makeConfirmSignUpErrors)]);
+                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ConfirmSignUp.makeFromJson(param[/* json */1])]);
                 return Future.value(tmp);
               }));
 }
 
-function initiateAuth(config, username, password, param) {
-  var authParams = { };
-  authParams["USERNAME"] = username;
-  authParams["PASSWORD"] = password;
+function initiateAuth(config, authParameters, authFlow, clientMetadata, analyticsEndpointId, param) {
   var params = { };
-  params["AuthParameters"] = authParams;
-  params["AuthFlow"] = "USER_PASSWORD_AUTH";
-  return Future.flatMapOk(request(config, /* InitiateAuth */8, params), (function (res) {
-                var match = res[/* status */0];
+  if (analyticsEndpointId !== undefined) {
+    params["AnalyticsMetadata"] = Caml_option.valFromOption(analyticsEndpointId);
+  }
+  params["AuthFlow"] = toString(authFlow);
+  params["AuthParameters"] = Utils.makeJsonStringsFromDictValues(authParameters);
+  if (clientMetadata !== undefined) {
+    params["ClientMetadata"] = Caml_option.valFromOption(clientMetadata);
+  }
+  console.log(params);
+  return Future.flatMapOk(request(config, /* InitiateAuth */8, params), (function (param) {
+                var json = param[/* json */1];
                 var tmp;
-                if (match.tag === /* Success */1) {
-                  console.log(res);
-                  var authDecoder = res.AuthenticationResult;
-                  var authenticationResult_000 = /* accessToken */authDecoder.AccessToken;
-                  var authenticationResult_001 = /* expiresIn */authDecoder.ExpiresIn;
-                  var authenticationResult_002 = /* idToken */authDecoder.IdToken;
-                  var authenticationResult_003 = /* refreshToken */authDecoder.RefreshToken;
-                  var authenticationResult_004 = /* tokenType */authDecoder.TokenType;
-                  var authenticationResult = /* record */[
-                    authenticationResult_000,
-                    authenticationResult_001,
-                    authenticationResult_002,
-                    authenticationResult_003,
-                    authenticationResult_004
-                  ];
-                  tmp = /* Ok */Block.__(0, [/* record */[
-                        /* authenticationResult */authenticationResult,
-                        /* challengeParameters */res.ChallengeParameters
-                      ]]);
-                } else {
-                  tmp = /* Error */Block.__(1, [Belt_Option.mapWithDefault(Serde.parseCognitoError(res[/* json */1]), /* `CognitoUnknownError */[
-                            -55570033,
-                            "temp error"
-                          ], (function (err) {
-                              var match = err[/* __type */0];
-                              switch (match) {
-                                case "InvalidParameterException" :
-                                    return /* `CognitoInvalidParameter */[
-                                            -267133469,
-                                            err[/* message */1]
-                                          ];
-                                case "NotAuthorizedException" :
-                                    return /* `CognitoNotAuthorized */[
-                                            -1019683139,
-                                            err[/* message */1]
-                                          ];
-                                default:
-                                  return /* `CognitoUnknownError */[
-                                          -55570033,
-                                          err[/* message */1]
-                                        ];
-                              }
-                            }))]);
-                }
+                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_initiateAuthResponse, json)]) : /* Error */Block.__(1, [Errors.InitiateAuth.makeFromJson(json)]);
                 return Future.value(tmp);
               }));
 }
 
-exports.makeConfig = makeConfig;
+exports.Config = Config;
 exports.Client = Client;
 exports.signUp = signUp;
 exports.confirmSignUp = confirmSignUp;

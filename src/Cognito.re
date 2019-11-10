@@ -1,45 +1,110 @@
 [%raw "require('isomorphic-fetch')"];
 
-open Types;
-open Serde;
+open Utils;
 
-type t = {
-  poolId: string,
-  clientId: string,
-  endpoint: string,
-  authenticationFlowType,
-};
+module Config = {
+  module AuthenticationFlowType = {
+    /* https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html#API_InitiateAuth_RequestSyntax */
+    type t =
+      | USER_PASSWORD_AUTH
+      | USER_SRP_AUTH
+      | CUSTOM_AUTH;
 
-let makeConfig =
-    (~poolId, ~clientId, ~region, ~authenticationFlowType=USER_SRP_AUTH, ()) => {
-  clientId,
-  poolId,
-  authenticationFlowType,
-  endpoint:
-    "https://cognito-idp." ++ makeRegionString(region) ++ ".amazonaws.com/",
-};
+    let toString =
+      fun
+      | USER_PASSWORD_AUTH => "USER_PASSWORD_AUTH"
+      | USER_SRP_AUTH => "USER_SRP_AUTH"
+      | CUSTOM_AUTH => "CUSTOM_AUTH";
 
-module type Client = {
-  type error = [ | `ReasonCognitoClientError(Js.Promise.error)];
-  type response = {
-    status: int,
-    json: Js.Json.t,
+    let toJson = t => t->toString->Js.Json.string;
   };
-  let request:
-    (t, string, Js.Dict.t(Js.Json.t), t, operation, Js.Dict.t(Js.Json.t)) =>
-    Future.t(Belt.Result.t(response, [< error]));
+  module Region = {
+    type t =
+      | UsEast1
+      | UsEast2
+      | UsWest2
+      | ApSouth1
+      | ApNortheast1
+      | ApNortheast2
+      | ApSoutheast1
+      | ApSoutheast2
+      | CaCentral1
+      | EuCentral1
+      | EuWest1
+      | EuWest2;
+
+    let toString =
+      fun
+      | UsEast1 => "us-east-1"
+      | UsEast2 => "us-east-2"
+      | UsWest2 => "us-west-2"
+      | ApSouth1 => "ap-south-1"
+      | ApNortheast1 => "ap-northeast-2"
+      | ApNortheast2 => "ap-northeast-2"
+      | ApSoutheast1 => "ap-southeast-1"
+      | ApSoutheast2 => "ap-southeast-2"
+      | CaCentral1 => "ca-central-1"
+      | EuCentral1 => "eu-central-1"
+      | EuWest1 => "eu-west-1"
+      | EuWest2 => "eu-west-2";
+  };
+  type t = {
+    poolId: string,
+    clientId: string,
+    endpoint: string,
+    authenticationFlowType: AuthenticationFlowType.t,
+  };
+
+  let make =
+      (
+        ~poolId,
+        ~clientId,
+        ~region,
+        ~authenticationFlowType=AuthenticationFlowType.USER_SRP_AUTH,
+        (),
+      ) => {
+    clientId,
+    poolId,
+    authenticationFlowType,
+    endpoint:
+      "https://cognito-idp." ++ Region.toString(region) ++ ".amazonaws.com/",
+  };
 };
+
 module Client = {
-  // In the end we really prefer a generic client interface, probably more
-  // generic than this one.  Why?  So we can plug out the implmentation
-  // on native, mobile, or what have you.  Right now, this is JS/Node
-  // targets only.
+  // Trying to maintain a generic implementation here so that it can be plugged out
+  // in different libraries.
   type status =
     | Informational(int)
     | Success(int)
     | Redirect(int)
     | ClientError(int)
     | ServerError(int);
+
+  module Operation = {
+    type t =
+      | SignUp
+      | SignIn
+      | SignOut
+      | ConfirmSignUp
+      | ChangePassword
+      | RespondToAuthChallenge
+      | ForgotPassword
+      | ConfirmForgotPassword
+      | InitiateAuth;
+
+    let toString =
+      fun
+      | SignUp => "SignUp"
+      | SignIn => "SignIn"
+      | SignOut => "SignOut"
+      | ConfirmSignUp => "ConfirmSignUp"
+      | ChangePassword => "ChangePassword"
+      | RespondToAuthChallenge => "RespondToAuthChallenge"
+      | ForgotPassword => "ForgotPassword"
+      | ConfirmForgotPassword => "ConfirmForgotPassword"
+      | InitiateAuth => "InitiateAuth";
+  };
 
   type response = {
     status,
@@ -58,11 +123,11 @@ module Client = {
   // returns an error code (4XX, 5XX), that should be handled elsewhere.
   //
   // TODO: More generic implemntation (no Js.* types)
-  let request = (config, operation, params: Js.Dict.t(Js.Json.t)) => {
+  let request = (config: Config.t, operation, params: Js.Dict.t(Js.Json.t)) => {
     // Setup headers.
     let headers = Js.Dict.empty();
     let target =
-      "AWSCognitoIdentityProviderService." ++ makeOperationString(operation);
+      "AWSCognitoIdentityProviderService." ++ Operation.toString(operation);
     Js.Dict.set(headers, "X-Amz-Target", target);
     Js.Dict.set(headers, "Content-Type", "application/x-amz-json-1.1");
     Js.Dict.set(headers, "X-Amz-User-Agent", "reason-cognito/0.1.x js");
@@ -178,15 +243,12 @@ let signUp =
       Future.value(
         switch (res.status) {
         | Success(_) =>
-          switch (makeSignupResponse(res.json)) {
-          | Some(result) => Belt.Result.Ok(result)
-          | None => Belt.Result.Error(`ReasonCognitoSerdeError(res.json))
-          }
+          Belt.Result.Ok(CognitoJson_bs.read_signUpResponse(res.json))
         | Informational(_)
         | Redirect(_)
         | ClientError(_)
         | ServerError(_) =>
-          Belt.Result.Error(res.json->makeErrKind(makeSignUpErrors))
+          Belt.Result.Error(Errors.SignUpErrors.makeFromJson(res.json))
         },
       )
     );
@@ -254,66 +316,84 @@ let confirmSignUp =
   // };
 
   Client.request(config, ConfirmSignUp, params)
-  ->Future.flatMapOk(res =>
+  ->Future.flatMapOk(({status, json}) =>
       Future.value(
-        switch (res.status) {
+        switch (status) {
         | Success(_) => Belt.Result.Ok()
         | Informational(_)
         | Redirect(_)
         | ClientError(_)
         | ServerError(_) =>
-          Belt.Result.Error(res.json->makeErrKind(makeConfirmSignUpErrors))
+          Belt.Result.Error(Errors.ConfirmSignUp.makeFromJson(json))
         },
       )
     );
 };
 
-let initiateAuth = (config, ~username: string, ~password: string, ()) => {
-  let authParams = Js.Dict.empty();
-  Js.Dict.set(authParams, "USERNAME", Js.Json.string(username));
-  Js.Dict.set(authParams, "PASSWORD", Js.Json.string(password));
+let initiateAuth =
+    (
+      config,
+      ~authParameters,
+      ~authFlow,
+      ~clientMetadata=?,
+      ~analyticsEndpointId=?,
+      (),
+    ) => {
+  // https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html
+
+  open Config;
 
   let params = Js.Dict.empty();
-  Js.Dict.set(params, "AuthParameters", Js.Json.object_(authParams));
-  Js.Dict.set(params, "AuthFlow", Js.Json.string("USER_PASSWORD_AUTH"));
+  //   {
+  //    "AnalyticsMetadata": {
+  //       "AnalyticsEndpointId": "string"
+  //    },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  //    "AuthFlow": "string",
+  Js.Dict.set(params, "AuthFlow", AuthenticationFlowType.toJson(authFlow));
+
+  //    "AuthParameters": {
+  //       "string" : "string"
+  //    },
+  // TODO: Make this type smarter (certain auth flows have required AuthParameters)
+  Js.Dict.set(
+    params,
+    "AuthParameters",
+    Js.Json.object_(makeJsonStringsFromDictValues(authParameters)),
+  );
+
+  //    "ClientId": "string", <- from client config
+  //    "ClientMetadata": {
+  //       "string" : "string"
+  //    },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //    "UserContextData": {
+  //       "EncodedData": "string"
+  //    }
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+  // }
+  Js.log(params);
   Client.request(config, InitiateAuth, params)
-  ->Future.flatMapOk(res =>
+  ->Future.flatMapOk(({status, json}) =>
       Future.value(
-        switch (res.status) {
+        switch (status) {
         | Success(_) =>
-          // We're _really_ hoping amazon holds to their API contract here.
-          // If not, we're going to see null type errors.
-          Js.log(res);
-          let signInResponse = makeSignInResponse(res);
-          let authDecoder = signInResponse->authenticationResultDecoderGet;
-          let authenticationResult = {
-            accessToken: authDecoder->accessTokenGet,
-            idToken: authDecoder->idTokenGet,
-            refreshToken: authDecoder->refreshTokenGet,
-            tokenType: authDecoder->tokenTypeGet,
-            expiresIn: authDecoder->expiresInGet,
-          };
-          Belt.Result.Ok({
-            authenticationResult,
-            challengeParameters: signInResponse->challengeParametersGet,
-          });
+          Belt.Result.Ok(CognitoJson_bs.read_initiateAuthResponse(json))
         | Informational(_)
         | Redirect(_)
         | ClientError(_)
         | ServerError(_) =>
-          Belt.Result.Error(
-            parseCognitoError(res.json)
-            ->Belt.Option.mapWithDefault(
-                `CognitoUnknownError("temp error"), err =>
-                switch (err.__type) {
-                | "InvalidParameterException" =>
-                  `CognitoInvalidParameter(err.message)
-                | "NotAuthorizedException" =>
-                  `CognitoNotAuthorized(err.message)
-                | _ => `CognitoUnknownError(err.message)
-                }
-              ),
-          )
+          Belt.Result.Error(Errors.InitiateAuth.makeFromJson(json))
         },
       )
     );

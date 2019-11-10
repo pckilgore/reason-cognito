@@ -4,7 +4,7 @@
 var Future = require("reason-future/src/Future.bs.js");
 var Cognito = require("./Cognito.bs.js");
 
-var auth = Cognito.makeConfig("us-east-2_pTFKTGtS3", "3vjshpa4lgf92nfisjrg9os21a", /* UsEast2 */1, undefined, /* () */0);
+var auth = Cognito.Config.make("us-east-2_pTFKTGtS3", "3vjshpa4lgf92nfisjrg9os21a", /* UsEast2 */1, undefined, /* () */0);
 
 var emailAttribute = { };
 
@@ -12,8 +12,21 @@ emailAttribute["Name"] = "email";
 
 emailAttribute["Value"] = "reasoncog@pck.email";
 
-Future.tapError(Future.tapOk(Cognito.initiateAuth(auth, "sarah7", "Password12345@", /* () */0), (function (value) {
-            console.log("OK", value);
+var authParameters = { };
+
+authParameters["USERNAME"] = "sarah7";
+
+authParameters["PASSWORD"] = "Password12345@";
+
+Future.tapError(Future.tapOk(Cognito.initiateAuth(auth, authParameters, /* USER_PASSWORD_AUTH */0, undefined, undefined, /* () */0), (function (value) {
+            console.log("result", value[/* authenticationResult */0]);
+            var match = value[/* challengeName */1];
+            if (match !== undefined) {
+              console.log(match);
+            } else {
+              console.log("No challenge name");
+            }
+            console.log("params", value[/* challengeParameters */2]);
             return /* () */0;
           })), (function (value) {
         console.log("err", value);
@@ -22,4 +35,5 @@ Future.tapError(Future.tapOk(Cognito.initiateAuth(auth, "sarah7", "Password12345
 
 exports.auth = auth;
 exports.emailAttribute = emailAttribute;
+exports.authParameters = authParameters;
 /* auth Not a pure module */
