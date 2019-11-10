@@ -88,6 +88,7 @@ module Client = {
       | ConfirmSignUp
       | ForgotPassword
       | InitiateAuth
+      | ResendConfirmationCode
       | RespondToAuthChallenge
       | SignIn
       | SignUp;
@@ -99,6 +100,7 @@ module Client = {
       | ConfirmSignUp => "ConfirmSignUp"
       | ForgotPassword => "ForgotPassword"
       | InitiateAuth => "InitiateAuth"
+      | ResendConfirmationCode => "ResendConfirmationCode"
       | RespondToAuthChallenge => "RespondToAuthChallenge"
       | SignIn => "SignIn"
       | SignUp => "SignUp";
@@ -485,6 +487,110 @@ let confirmForgotPassword =
         | ClientError(_)
         | ServerError(_) =>
           Belt.Result.Error(Errors.ConfirmForgotPassword.makeFromJson(json))
+        },
+      )
+    );
+};
+
+let forgotPassword =
+    (config, ~username, ~analyticsEndpointId=?, ~clientMetadata=?, ()) => {
+  let params = Js.Dict.empty();
+  //   {
+  //    "AnalyticsMetadata": {
+  //       "AnalyticsEndpointId": "string"
+  //    },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  //    "ClientId": "string", <- from config
+  //    "ClientMetadata": {
+  //       "string" : "string"
+  //    },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  // ====Unimplemented=========
+  //    "SecretHash": "string",
+  // ====End Unimplemented=====
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+
+  //    "Username": "string"
+  Js.Dict.set(params, "Username", Js.Json.string(username));
+  // }
+
+  Client.request(config, ForgotPassword, params)
+  ->Future.flatMapOk(({status, json}) =>
+      Future.value(
+        switch (status) {
+        | Success(_) =>
+          Belt.Result.Ok(CognitoJson_bs.read_codeDeliveryResponse(json))
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(Errors.ForgotPassword.makeFromJson(json))
+        },
+      )
+    );
+};
+
+let resendConfirmationCode =
+    (config, ~username, ~analyticsEndpointId=?, ~clientMetadata=?, ()) => {
+  let params = Js.Dict.empty();
+  //   {
+  //    "AnalyticsMetadata": {
+  //       "AnalyticsEndpointId": "string"
+  //    },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  //    "ClientId": "string", <- from config
+  //    "ClientMetadata": {
+  //       "string" : "string"
+  //    },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  // ====Unimplemented=========
+  //    "SecretHash": "string",
+  // ====End Unimplemented=====
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+
+  //    "Username": "string"
+  Js.Dict.set(params, "Username", Js.Json.string(username));
+  // }
+
+  Client.request(config, ResendConfirmationCode, params)
+  ->Future.flatMapOk(({status, json}) =>
+      Future.value(
+        switch (status) {
+        | Success(_) =>
+          Belt.Result.Ok(CognitoJson_bs.read_codeDeliveryResponse(json))
+        | Informational(_)
+        | Redirect(_)
+        | ClientError(_)
+        | ServerError(_) =>
+          Belt.Result.Error(Errors.ResendConfirmationCode.makeFromJson(json))
         },
       )
     );

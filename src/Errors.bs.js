@@ -326,10 +326,123 @@ var ConfirmForgotPassword = {
   makeFromJson: makeFromJson$5
 };
 
+function make$6(param) {
+  var message = param[/* message */1];
+  switch (param[/* __type */0]) {
+    case "CodeDeliveryFailureException" :
+        return /* `CognitoCodeDeliveryFailure */[
+                307717752,
+                message
+              ];
+    case "InvalidEmailRoleAccessPolicyException" :
+        return /* `CognitoInvalidEmailRoleAccessPolicy */[
+                -320011326,
+                message
+              ];
+    case "InvalidSmsRoleAccessPolicyException" :
+        return /* `CognitoInvalidSmsRoleAccessPolicy */[
+                782712511,
+                message
+              ];
+    case "InvalidSmsRoleTrustRelationshipException" :
+        return /* `CognitoInvalidSmsRoleTrustRelationship */[
+                -198400121,
+                message
+              ];
+    case "LimitExceededException" :
+        return /* `CognitoLimitExceeded */[
+                767083101,
+                message
+              ];
+    case "UserNotConfirmedException" :
+        return /* `CognitoUserNotConfirmed */[
+                937418472,
+                message
+              ];
+    case "UserNotFoundException" :
+        return /* `CognitoUserNotFound */[
+                376697675,
+                message
+              ];
+    default:
+      return /* ReasonCognitoUnknownError */536808491;
+  }
+}
+
+function makeFromJson$6(json) {
+  var err = Curry._1(CognitoJson_bs.read_error, json);
+  var match = make(err);
+  if (match !== undefined) {
+    return match;
+  } else {
+    return make$6(err);
+  }
+}
+
+var ForgotPassword = {
+  make: make$6,
+  makeFromJson: makeFromJson$6
+};
+
+function make$7(param) {
+  var message = param[/* message */1];
+  switch (param[/* __type */0]) {
+    case "CodeDeliveryFailureException" :
+        return /* `CognitoCodeDeliveryFailure */[
+                307717752,
+                message
+              ];
+    case "InvalidEmailRoleAccessPolicyException" :
+        return /* `CognitoInvalidEmailRoleAccessPolicy */[
+                -320011326,
+                message
+              ];
+    case "InvalidSmsRoleAccessPolicyException" :
+        return /* `CognitoInvalidSmsRoleAccessPolicy */[
+                782712511,
+                message
+              ];
+    case "InvalidSmsRoleTrustRelationshipException" :
+        return /* `CognitoInvalidSmsRoleTrustRelationship */[
+                -198400121,
+                message
+              ];
+    case "LimitExceededException" :
+        return /* `CognitoLimitExceeded */[
+                767083101,
+                message
+              ];
+    case "UserNotFoundException" :
+        return /* `CognitoUserNotFound */[
+                376697675,
+                message
+              ];
+    default:
+      return /* ReasonCognitoUnknownError */536808491;
+  }
+}
+
+function makeFromJson$7(json) {
+  var err = Curry._1(CognitoJson_bs.read_error, json);
+  var match = make(err);
+  if (match !== undefined) {
+    return match;
+  } else {
+    return make$7(err);
+  }
+}
+
+var ResendConfirmationCode = {
+  make: make$7,
+  makeFromJson: makeFromJson$7
+};
+
 exports.Common = Common;
 exports.ConfirmSignUp = ConfirmSignUp;
 exports.SignUpErrors = SignUpErrors;
 exports.InitiateAuth = InitiateAuth;
 exports.ChangePassword = ChangePassword;
 exports.ConfirmForgotPassword = ConfirmForgotPassword;
+exports.ForgotPassword = ForgotPassword;
+exports.ResendConfirmationCode = ResendConfirmationCode;
 /* CognitoJson_bs Not a pure module */

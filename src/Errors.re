@@ -39,6 +39,7 @@ module ConfirmSignUp = {
     | `CognitoLimitExceeded(apiErrorMessage)
     | `CognitoTooManyFailedAttempts(apiErrorMessage)
     | `CognitoUserNotFound(apiErrorMessage)
+    | `ReasonCognitoUnknownError
   ];
 
   let make = ({__type, message}: CognitoJson_bs.error) =>
@@ -72,6 +73,7 @@ module SignUpErrors = {
     | `CognitoInvalidSmsRoleAccessPolicys(apiErrorMessage)
     | `CognitoInvalidSmsRoleTrustRelationship(apiErrorMessage)
     | `CognitoUsernameExists(apiErrorMessage)
+    | `ReasonCognitoUnknownError
   ];
 
   let make = ({__type, message}: CognitoJson_bs.error) =>
@@ -105,6 +107,7 @@ module InitiateAuth = {
     | `CognitoPasswordResetRequired(apiErrorMessage)
     | `CognitoUserNotConfirmed(apiErrorMessage)
     | `CognitoUserNotFound(apiErrorMessage)
+    | `ReasonCognitoUnknownError
   ];
 
   let make = ({__type, message}: CognitoJson_bs.error) =>
@@ -138,6 +141,7 @@ module ChangePassword = {
     | `CognitoPasswordResetRequired(apiErrorMessage)
     | `CognitoUserNotConfirmed(apiErrorMessage)
     | `CognitoUserNotFound(apiErrorMessage)
+    | `ReasonCognitoUnknownError
   ];
 
   let make = ({__type, message}: CognitoJson_bs.error) =>
@@ -169,6 +173,7 @@ module ConfirmForgotPassword = {
     | `CognitoTooManyFailedAttempts(apiErrorMessage)
     | `CognitoUserNotConfirmed(apiErrorMessage)
     | `CognitoUserNotFound(apiErrorMessage)
+    | `ReasonCognitoUnknownError
   ];
 
   let make = ({__type, message}: CognitoJson_bs.error) =>
@@ -180,6 +185,76 @@ module ConfirmForgotPassword = {
     | "TooManyFailedAttemptsException" =>
       `CognitoTooManyFailedAttempts(message)
     | "UserNotConfirmedException" => `CognitoUserNotConfirmed(message)
+    | "UserNotFoundException" => `CognitoUserNotFound(message)
+    | _ => `ReasonCognitoUnknownError
+    };
+
+  let makeFromJson = json => {
+    let err = CognitoJson_bs.read_error(json);
+    switch (Common.make(err)) {
+    | Some(commonError) => commonError
+    | None => make(err)
+    };
+  };
+};
+
+module ForgotPassword = {
+  type t = [
+    | `CognitoCodeDeliveryFailure(apiErrorMessage)
+    | `CognitoInvalidEmailRoleAccessPolicy(apiErrorMessage)
+    | `CognitoInvalidSmsRoleAccessPolicy(apiErrorMessage)
+    | `CognitoInvalidSmsRoleTrustRelationship(apiErrorMessage)
+    | `CognitoLimitExceeded(apiErrorMessage)
+    | `CognitoUserNotConfirmed(apiErrorMessage)
+    | `CognitoUserNotFound(apiErrorMessage)
+    | `ReasonCognitoUnknownError
+  ];
+
+  let make = ({__type, message}: CognitoJson_bs.error) =>
+    switch (__type) {
+    | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(message)
+    | "InvalidEmailRoleAccessPolicyException" =>
+      `CognitoInvalidEmailRoleAccessPolicy(message)
+    | "InvalidSmsRoleAccessPolicyException" =>
+      `CognitoInvalidSmsRoleAccessPolicy(message)
+    | "InvalidSmsRoleTrustRelationshipException" =>
+      `CognitoInvalidSmsRoleTrustRelationship(message)
+    | "LimitExceededException" => `CognitoLimitExceeded(message)
+    | "UserNotConfirmedException" => `CognitoUserNotConfirmed(message)
+    | "UserNotFoundException" => `CognitoUserNotFound(message)
+    | _ => `ReasonCognitoUnknownError
+    };
+
+  let makeFromJson = json => {
+    let err = CognitoJson_bs.read_error(json);
+    switch (Common.make(err)) {
+    | Some(commonError) => commonError
+    | None => make(err)
+    };
+  };
+};
+
+module ResendConfirmationCode = {
+  type t = [
+    | `CognitoCodeDeliveryFailure(apiErrorMessage)
+    | `CognitoInvalidEmailRoleAccessPolicy(apiErrorMessage)
+    | `CognitoInvalidSmsRoleAccessPolicy(apiErrorMessage)
+    | `CognitoInvalidSmsRoleTrustRelationship(apiErrorMessage)
+    | `CognitoLimitExceeded(apiErrorMessage)
+    | `CognitoUserNotFound(apiErrorMessage)
+    | `ReasonCognitoUnknownError
+  ];
+
+  let make = ({__type, message}: CognitoJson_bs.error) =>
+    switch (__type) {
+    | "CodeDeliveryFailureException" => `CognitoCodeDeliveryFailure(message)
+    | "InvalidEmailRoleAccessPolicyException" =>
+      `CognitoInvalidEmailRoleAccessPolicy(message)
+    | "InvalidSmsRoleAccessPolicyException" =>
+      `CognitoInvalidSmsRoleAccessPolicy(message)
+    | "InvalidSmsRoleTrustRelationshipException" =>
+      `CognitoInvalidSmsRoleTrustRelationship(message)
+    | "LimitExceededException" => `CognitoLimitExceeded(message)
     | "UserNotFoundException" => `CognitoUserNotFound(message)
     | _ => `ReasonCognitoUnknownError
     };

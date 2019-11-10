@@ -93,11 +93,13 @@ function toString$2(param) {
         return "ForgotPassword";
     case /* InitiateAuth */4 :
         return "InitiateAuth";
-    case /* RespondToAuthChallenge */5 :
+    case /* ResendConfirmationCode */5 :
+        return "ResendConfirmationCode";
+    case /* RespondToAuthChallenge */6 :
         return "RespondToAuthChallenge";
-    case /* SignIn */6 :
+    case /* SignIn */7 :
         return "SignIn";
-    case /* SignUp */7 :
+    case /* SignUp */8 :
         return "SignUp";
     
   }
@@ -164,7 +166,7 @@ function signUp(config, username, password, $staropt$star, $staropt$star$1, anal
   params["UserAttributes"] = Utils.jsonMapString(attributes);
   params["Username"] = username;
   params["ValidationData"] = Utils.jsonMapString(validationData);
-  return Future.flatMapOk(request(config, /* SignUp */7, params), (function (res) {
+  return Future.flatMapOk(request(config, /* SignUp */8, params), (function (res) {
                 var match = res[/* status */0];
                 var tmp;
                 tmp = match.tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_signUpResponse, res[/* json */1])]) : /* Error */Block.__(1, [Errors.SignUpErrors.makeFromJson(res[/* json */1])]);
@@ -242,6 +244,40 @@ function confirmForgotPassword(config, username, password, confirmationCode, ana
               }));
 }
 
+function forgotPassword(config, username, analyticsEndpointId, clientMetadata, param) {
+  var params = { };
+  if (analyticsEndpointId !== undefined) {
+    params["AnalyticsMetadata"] = Caml_option.valFromOption(analyticsEndpointId);
+  }
+  if (clientMetadata !== undefined) {
+    params["ClientMetadata"] = Caml_option.valFromOption(clientMetadata);
+  }
+  params["Username"] = username;
+  return Future.flatMapOk(request(config, /* ForgotPassword */3, params), (function (param) {
+                var json = param[/* json */1];
+                var tmp;
+                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_codeDeliveryResponse, json)]) : /* Error */Block.__(1, [Errors.ForgotPassword.makeFromJson(json)]);
+                return Future.value(tmp);
+              }));
+}
+
+function resendConfirmationCode(config, username, analyticsEndpointId, clientMetadata, param) {
+  var params = { };
+  if (analyticsEndpointId !== undefined) {
+    params["AnalyticsMetadata"] = Caml_option.valFromOption(analyticsEndpointId);
+  }
+  if (clientMetadata !== undefined) {
+    params["ClientMetadata"] = Caml_option.valFromOption(clientMetadata);
+  }
+  params["Username"] = username;
+  return Future.flatMapOk(request(config, /* ResendConfirmationCode */5, params), (function (param) {
+                var json = param[/* json */1];
+                var tmp;
+                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_codeDeliveryResponse, json)]) : /* Error */Block.__(1, [Errors.ResendConfirmationCode.makeFromJson(json)]);
+                return Future.value(tmp);
+              }));
+}
+
 exports.Config = Config;
 exports.Client = Client;
 exports.signUp = signUp;
@@ -249,4 +285,6 @@ exports.confirmSignUp = confirmSignUp;
 exports.initiateAuth = initiateAuth;
 exports.changePassword = changePassword;
 exports.confirmForgotPassword = confirmForgotPassword;
+exports.forgotPassword = forgotPassword;
+exports.resendConfirmationCode = resendConfirmationCode;
 /*  Not a pure module */
