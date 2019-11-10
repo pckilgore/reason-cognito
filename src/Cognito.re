@@ -83,27 +83,25 @@ module Client = {
 
   module Operation = {
     type t =
-      | SignUp
-      | SignIn
-      | SignOut
-      | ConfirmSignUp
       | ChangePassword
-      | RespondToAuthChallenge
-      | ForgotPassword
       | ConfirmForgotPassword
-      | InitiateAuth;
+      | ConfirmSignUp
+      | ForgotPassword
+      | InitiateAuth
+      | RespondToAuthChallenge
+      | SignIn
+      | SignUp;
 
     let toString =
       fun
-      | SignUp => "SignUp"
-      | SignIn => "SignIn"
-      | SignOut => "SignOut"
-      | ConfirmSignUp => "ConfirmSignUp"
       | ChangePassword => "ChangePassword"
-      | RespondToAuthChallenge => "RespondToAuthChallenge"
-      | ForgotPassword => "ForgotPassword"
       | ConfirmForgotPassword => "ConfirmForgotPassword"
-      | InitiateAuth => "InitiateAuth";
+      | ConfirmSignUp => "ConfirmSignUp"
+      | ForgotPassword => "ForgotPassword"
+      | InitiateAuth => "InitiateAuth"
+      | RespondToAuthChallenge => "RespondToAuthChallenge"
+      | SignIn => "SignIn"
+      | SignUp => "SignUp";
   };
 
   type response = {

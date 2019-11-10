@@ -83,24 +83,22 @@ var Config = {
 
 function toString$2(param) {
   switch (param) {
-    case /* SignUp */0 :
-        return "SignUp";
-    case /* SignIn */1 :
-        return "SignIn";
-    case /* SignOut */2 :
-        return "SignOut";
-    case /* ConfirmSignUp */3 :
-        return "ConfirmSignUp";
-    case /* ChangePassword */4 :
+    case /* ChangePassword */0 :
         return "ChangePassword";
+    case /* ConfirmForgotPassword */1 :
+        return "ConfirmForgotPassword";
+    case /* ConfirmSignUp */2 :
+        return "ConfirmSignUp";
+    case /* ForgotPassword */3 :
+        return "ForgotPassword";
+    case /* InitiateAuth */4 :
+        return "InitiateAuth";
     case /* RespondToAuthChallenge */5 :
         return "RespondToAuthChallenge";
-    case /* ForgotPassword */6 :
-        return "ForgotPassword";
-    case /* ConfirmForgotPassword */7 :
-        return "ConfirmForgotPassword";
-    case /* InitiateAuth */8 :
-        return "InitiateAuth";
+    case /* SignIn */6 :
+        return "SignIn";
+    case /* SignUp */7 :
+        return "SignUp";
     
   }
 }
@@ -166,7 +164,7 @@ function signUp(config, username, password, $staropt$star, $staropt$star$1, anal
   params["UserAttributes"] = Utils.jsonMapString(attributes);
   params["Username"] = username;
   params["ValidationData"] = Utils.jsonMapString(validationData);
-  return Future.flatMapOk(request(config, /* SignUp */0, params), (function (res) {
+  return Future.flatMapOk(request(config, /* SignUp */7, params), (function (res) {
                 var match = res[/* status */0];
                 var tmp;
                 tmp = match.tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_signUpResponse, res[/* json */1])]) : /* Error */Block.__(1, [Errors.SignUpErrors.makeFromJson(res[/* json */1])]);
@@ -189,7 +187,7 @@ function confirmSignUp(config, username, confirmationCode, $staropt$star, secret
     params["SecretHash"] = secretHash;
   }
   params["Username"] = username;
-  return Future.flatMapOk(request(config, /* ConfirmSignUp */3, params), (function (param) {
+  return Future.flatMapOk(request(config, /* ConfirmSignUp */2, params), (function (param) {
                 var tmp;
                 tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ConfirmSignUp.makeFromJson(param[/* json */1])]);
                 return Future.value(tmp);
@@ -206,7 +204,7 @@ function initiateAuth(config, authParameters, authFlow, clientMetadata, analytic
   if (clientMetadata !== undefined) {
     params["ClientMetadata"] = Caml_option.valFromOption(clientMetadata);
   }
-  return Future.flatMapOk(request(config, /* InitiateAuth */8, params), (function (param) {
+  return Future.flatMapOk(request(config, /* InitiateAuth */4, params), (function (param) {
                 var json = param[/* json */1];
                 var tmp;
                 tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_initiateAuthResponse, json)]) : /* Error */Block.__(1, [Errors.InitiateAuth.makeFromJson(json)]);
@@ -219,7 +217,7 @@ function changePassword(config, accessToken, previousPassword, proposedPassword,
   params["AccessToken"] = accessToken;
   params["PreviousPassword"] = previousPassword;
   params["ProposedPassword"] = proposedPassword;
-  return Future.flatMapOk(request(config, /* ChangePassword */4, params), (function (param) {
+  return Future.flatMapOk(request(config, /* ChangePassword */0, params), (function (param) {
                 var tmp;
                 tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ChangePassword.makeFromJson(param[/* json */1])]);
                 return Future.value(tmp);
@@ -237,7 +235,7 @@ function confirmForgotPassword(config, username, password, confirmationCode, ana
   params["ConfirmationCode"] = confirmationCode;
   params["Password"] = password;
   params["Username"] = username;
-  return Future.flatMapOk(request(config, /* ConfirmForgotPassword */7, params), (function (param) {
+  return Future.flatMapOk(request(config, /* ConfirmForgotPassword */1, params), (function (param) {
                 var tmp;
                 tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ConfirmForgotPassword.makeFromJson(param[/* json */1])]);
                 return Future.value(tmp);
