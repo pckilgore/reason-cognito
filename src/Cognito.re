@@ -137,7 +137,6 @@ module Client = {
       config.endpoint,
       Fetch.RequestInit.make(
         ~method_=Post,
-        ~mode=NoCORS,
         ~cache=NoCache,
         ~headers=Fetch.HeadersInit.makeWithDict(headers),
         ~body=

@@ -114,7 +114,7 @@ function request(config, operation, params) {
   headers["Content-Type"] = "application/x-amz-json-1.1";
   headers["X-Amz-User-Agent"] = "reason-cognito/0.1.x js";
   params["ClientId"] = config[/* clientId */1];
-  return Future.flatMapOk(FutureJs.fromPromise(fetch(config[/* endpoint */2], Fetch.RequestInit.make(/* Post */2, Caml_option.some(headers), Caml_option.some(JSON.stringify(params)), undefined, undefined, /* NoCORS */2, undefined, /* NoCache */3, undefined, undefined, undefined)(/* () */0)), (function (fetchError) {
+  return Future.flatMapOk(FutureJs.fromPromise(fetch(config[/* endpoint */2], Fetch.RequestInit.make(/* Post */2, Caml_option.some(headers), Caml_option.some(JSON.stringify(params)), undefined, undefined, undefined, undefined, /* NoCache */3, undefined, undefined, undefined)(/* () */0)), (function (fetchError) {
                     return /* `ReasonCognitoClientError */[
                             -291143216,
                             fetchError
