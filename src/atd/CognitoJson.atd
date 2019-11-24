@@ -27,7 +27,7 @@ type authenticationResult = {
   idToken <json name="IdToken"> : string;
   refreshToken <json name="RefreshToken"> : string;
   tokenType <json name="TokenType"> : string;
-  newDeviceMetaData <json name="NewDeviceMetadata"> : newDeviceMetaData;
+  ?newDeviceMetaData <json name="NewDeviceMetadata"> : newDeviceMetaData option;
 }
 
 type challengeParameters = (string * string) list <json repr="object">
@@ -42,6 +42,19 @@ type authenticationResponse = {
   authenticationResult <json name="AuthenticationResult"> : authenticationResult;
   ?challengeName <json name="ChallengeName"> : challengeName option;
   ?challengeParameters <json name="ChallengeParameters"> : challengeParameters option;
+}
+
+type authSRPResponse = {
+  challengeName <json name="ChallengeName"> : challengeName;
+  challengeParameters <json name="ChallengeParameters"> : verifierChallengeParams;
+}
+
+type verifierChallengeParams = {
+  salt <json name="SALT"> : string;
+  secretBlock <json name="SECRET_BLOCK"> : string;
+  srpB <json name="SRP_B"> : string;
+  username <json name="USERNAME"> : string;
+  userIdForSrp <json name="USER_ID_FOR_SRP"> : string;
 }
 
 type newDeviceMetaData = {

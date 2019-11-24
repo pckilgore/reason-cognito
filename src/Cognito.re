@@ -49,22 +49,24 @@ module Config = {
       | EuWest2 => "eu-west-2";
   };
   type t = {
-    poolId: string,
+    pool: string,
     clientId: string,
     endpoint: string,
     authenticationFlowType: AuthenticationFlowType.t,
   };
 
+  let getPoolId = t => Js.String.split("_", t.pool)[1];
+
   let make =
       (
-        ~poolId,
+        ~pool,
         ~clientId,
         ~region,
         ~authenticationFlowType=AuthenticationFlowType.USER_SRP_AUTH,
         (),
       ) => {
     clientId,
-    poolId,
+    pool,
     authenticationFlowType,
     endpoint:
       "https://cognito-idp." ++ Region.toString(region) ++ ".amazonaws.com/",
@@ -133,8 +135,7 @@ module Client = {
     // Add the configured clientId to the request.
     Js.Dict.set(params, "ClientId", Js.Json.string(config.clientId));
 
-    Fetch.fetchWithInit(
-      config.endpoint,
+    let settings =
       Fetch.RequestInit.make(
         ~method_=Post,
         ~cache=NoCache,
@@ -142,8 +143,11 @@ module Client = {
         ~body=
           Fetch.BodyInit.make(Js.Json.stringify(Js.Json.object_(params))),
         (),
-      ),
-    )
+      );
+
+    Js.log("Fetching...");
+    Js.log(settings);
+    Fetch.fetchWithInit(config.endpoint, settings)
     // Error = fetch did not do anything.
     ->FutureJs.fromPromise(fetchError =>
         `ReasonCognitoClientError(fetchError)
@@ -381,17 +385,178 @@ let initiateAuth =
   // }
 
   Client.request(config, InitiateAuth, params)
+  ->andIfOk(({status, json}) =>
+      switch (status) {
+      | Success(_) =>
+        CognitoJson_bs.read_authenticationResponse(json)->Belt.Result.Ok
+      | _ => Errors.InitiateAuth.makeFromJson(json)->Belt.Result.Error
+      }
+    );
+};
+
+let respondToAuthChallenge =
+    (
+      config,
+      ~challengeName: CognitoJson_bs.challengeName,
+      ~challengeResponses=?,
+      ~session=?,
+      ~analyticsEndpointId=?,
+      ~clientMetadata=?,
+      (),
+    ) => {
+  let params = Js.Dict.empty();
+  //   {
+  //    "AnalyticsMetadata": {
+  //       "AnalyticsEndpointId": "string"
+  //    },
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  //  "ChallengeName": "string",
+  Js.Dict.set(
+    params,
+    "ChallengeName",
+    CognitoJson_bs.write_challengeName(challengeName),
+  );
+  // "ChallengeResponses": {
+  //     "string" : "string"
+  //  },
+  switch (challengeResponses) {
+  | Some(
+      (
+        {userIdForSrp, secretBlock, timestamp, signature}: SRP.challengeResponse
+      ),
+    ) =>
+    open Js;
+    let data = Dict.empty();
+    data->Dict.set("USERNAME", Json.string(userIdForSrp));
+    data->Dict.set("PASSWORD_CLAIM_SECRET_BLOCK", Json.string(secretBlock));
+    data->Dict.set("TIMESTAMP", Json.string(timestamp));
+    data->Dict.set("PASSWORD_CLAIM_SIGNATURE", Json.string(signature));
+    Dict.set(params, "ChallengeResponses", Json.object_(data));
+  | None => ()
+  };
+  //    "ClientId": "string", <- from config
+  //    "ClientMetadata": {
+  //       "string" : "string"
+  //    },
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  //    "Session": "string"
+  switch (session) {
+  | Some(data) => Js.Dict.set(params, "Session", Js.Json.string(data))
+  | None => ()
+  };
+
+  // ==ADVANCED SECURITY UNIMPLEMENTED==
+  //   "UserContextData": {
+  //     "EncodedData": "string",
+  //   },
+  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
+  // }
+
+  Client.request(config, RespondToAuthChallenge, params)
   ->Future.flatMapOk(({status, json}) =>
       Future.value(
         switch (status) {
         | Success(_) =>
-          Belt.Result.Ok(CognitoJson_bs.read_authenticationResponse(json))
-        | Informational(_)
-        | Redirect(_)
-        | ClientError(_)
-        | ServerError(_) =>
-          Belt.Result.Error(Errors.InitiateAuth.makeFromJson(json))
+          CognitoJson_bs.read_authenticationResponse(json)->Belt.Result.Ok
+        | _ =>
+          Errors.RespondToAuthChallenge.makeFromJson(json)->Belt.Result.Error
         },
+      )
+    );
+};
+
+let initiateSRPAuth =
+    (
+      config,
+      ~authParameters,
+      ~authFlow=Config.AuthenticationFlowType.USER_SRP_AUTH,
+      ~clientMetadata=?,
+      ~analyticsEndpointId=?,
+      (),
+    ) => {
+  // https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html
+
+  let srpConfig = SRP.make(SRP.KnownSafePrimes.bit3072);
+
+  let srpPassword =
+    switch (Js.Dict.get(authParameters, "PASSWORD")) {
+    | Some(password) =>
+      Js.Dict.unsafeDeleteKey(. authParameters, "PASSWORD");
+      password;
+    | None => ""
+    };
+
+  let params = Js.Dict.empty();
+
+  switch (analyticsEndpointId) {
+  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
+  | None => ()
+  };
+
+  Js.Dict.set(
+    params,
+    "AuthFlow",
+    Config.AuthenticationFlowType.toJson(authFlow),
+  );
+
+  Js.Dict.set(authParameters, "SRP_A", SRP.hexStrFromBigInt(srpConfig.bigA));
+
+  Js.Dict.set(
+    params,
+    "AuthParameters",
+    Js.Json.object_(makeJsonStringsFromDictValues(authParameters)),
+  );
+  switch (clientMetadata) {
+  | Some(data) =>
+    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
+  | None => ()
+  };
+
+  Client.request(config, InitiateAuth, params)
+  ->andIfOk(({status, json}) =>
+      switch (status) {
+      | Success(_) =>
+        Belt.Result.Ok(CognitoJson_bs.read_authSRPResponse(json))
+      | _ => Belt.Result.Error(Errors.InitiateAuth.makeFromJson(json))
+      }
+    )
+  ->andIfOk(({challengeName, challengeParameters}) =>
+      switch (challengeName) {
+      | `PASSWORD_VERIFIER =>
+        let CognitoJson_bs.{userIdForSrp, srpB, salt} = challengeParameters;
+        let pool = Config.getPoolId(config);
+        let params: SRP.keyParameters = {
+          bigB: SRP.bigIntFromHexStr(srpB),
+          salt: SRP.bigIntFromHexStr(salt),
+          username: userIdForSrp,
+          password: srpPassword,
+          pool,
+        };
+        let keyResult = SRP.makeAuthenticationKey(srpConfig, params);
+        switch (keyResult) {
+        | Error(_) => Belt.Result.Error(`ReasonCognitoSRPError)
+        | Ok(key) =>
+          SRP.makeResponseParams(~pool, ~challengeParameters, ~key)
+          ->Belt.Result.Ok
+        };
+      | _ => Belt.Result.Error(`ReasonCognitoUnknownError)
+      }
+    )
+  ->Future.flatMapOk(challengeResponses =>
+      respondToAuthChallenge(
+        config,
+        ~challengeName=`PASSWORD_VERIFIER,
+        ~challengeResponses,
+        (),
       )
     );
 };
@@ -588,79 +753,6 @@ let resendConfirmationCode =
         | ClientError(_)
         | ServerError(_) =>
           Belt.Result.Error(Errors.ResendConfirmationCode.makeFromJson(json))
-        },
-      )
-    );
-};
-
-let respondToAuthChallenge =
-    (
-      config,
-      ~challengeName: CognitoJson_bs.challengeName,
-      ~challengeResponses=?,
-      ~session=?,
-      ~analyticsEndpointId=?,
-      ~clientMetadata=?,
-      (),
-    ) => {
-  let params = Js.Dict.empty();
-  //   {
-  //    "AnalyticsMetadata": {
-  //       "AnalyticsEndpointId": "string"
-  //    },
-  switch (analyticsEndpointId) {
-  | Some(id) => Js.Dict.set(params, "AnalyticsMetadata", Js.Json.object_(id))
-  | None => ()
-  };
-
-  //  "ChallengeName": "string",
-  Js.Dict.set(
-    params,
-    "ChallengeName",
-    CognitoJson_bs.write_challengeName(challengeName),
-  );
-  // "ChallengeResponses": {
-  //     "string" : "string"
-  //  },
-  switch (challengeResponses) {
-  | Some(data) =>
-    Js.Dict.set(params, "ChallengeResponses", Js.Json.object_(data))
-  | None => ()
-  };
-  //    "ClientId": "string", <- from config
-  //    "ClientMetadata": {
-  //       "string" : "string"
-  //    },
-  switch (clientMetadata) {
-  | Some(data) =>
-    Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
-  | None => ()
-  };
-
-  //    "Session": "string"
-  switch (session) {
-  | Some(data) => Js.Dict.set(params, "Session", Js.Json.string(data))
-  | None => ()
-  };
-
-  // ==ADVANCED SECURITY UNIMPLEMENTED==
-  //   "UserContextData": {
-  //     "EncodedData": "string",
-  //   },
-  // ^^ADVANCED SECURITY UNIMPLEMENTED^^
-  // }
-
-  Client.request(config, RespondToAuthChallenge, params)
-  ->Future.flatMapOk(({status, json}) =>
-      Future.value(
-        switch (status) {
-        | Success(_) =>
-          Belt.Result.Ok(CognitoJson_bs.read_authenticationResponse(json))
-        | Informational(_)
-        | Redirect(_)
-        | ClientError(_)
-        | ServerError(_) =>
-          Belt.Result.Error(Errors.RespondToAuthChallenge.makeFromJson(json))
         },
       )
     );

@@ -13,7 +13,9 @@
   "bs-dependencies": [
     "bs-fetch",
     "reason-future",
-    "@ahrefs/bs-atdgen-codec-runtime"
+    "@ahrefs/bs-atdgen-codec-runtime",
+    "@pckilgore/bs-biginteger",
+    "@pckilgore/bs-crypto-js"
   ],
   "warnings": {
     "error": "+101"

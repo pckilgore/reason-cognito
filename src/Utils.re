@@ -6,3 +6,6 @@ let jsonMapString = arr =>
     item => Js.Dict.map((. value) => Js.Json.string(value), item),
     arr,
   );
+
+let andIfOk = (fut, f) =>
+  Future.map(fut, res => Belt.Result.flatMap(res, f));

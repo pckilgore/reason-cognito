@@ -2,7 +2,9 @@
 'use strict';
 
 var $$Array = require("bs-platform/lib/js/array.js");
+var Future = require("reason-future/src/Future.bs.js");
 var Js_dict = require("bs-platform/lib/js/js_dict.js");
+var Belt_Result = require("bs-platform/lib/js/belt_Result.js");
 
 function makeJsonStringsFromDictValues(map) {
   return Js_dict.map((function (v) {
@@ -18,6 +20,13 @@ function jsonMapString(arr) {
               }), arr);
 }
 
+function andIfOk(fut, f) {
+  return Future.map(fut, (function (res) {
+                return Belt_Result.flatMap(res, f);
+              }));
+}
+
 exports.makeJsonStringsFromDictValues = makeJsonStringsFromDictValues;
 exports.jsonMapString = jsonMapString;
+exports.andIfOk = andIfOk;
 /* No side effect */
