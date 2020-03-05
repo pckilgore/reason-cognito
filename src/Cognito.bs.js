@@ -11,6 +11,7 @@ var Future = require("reason-future/src/Future.bs.js");
 var Js_dict = require("bs-platform/lib/js/js_dict.js");
 var FutureJs = require("reason-future/src/FutureJs.bs.js");
 var Caml_array = require("bs-platform/lib/js/caml_array.js");
+var Belt_Result = require("bs-platform/lib/js/belt_Result.js");
 var Caml_option = require("bs-platform/lib/js/caml_option.js");
 var CognitoJson_bs = require("./atd/CognitoJson_bs.bs.js");
 
@@ -69,17 +70,17 @@ var Region = {
 };
 
 function getPoolId(t) {
-  return Caml_array.caml_array_get(t[/* pool */0].split("_"), 1);
+  return Caml_array.caml_array_get(t.pool.split("_"), 1);
 }
 
 function make(pool, clientId, region, $staropt$star, param) {
   var authenticationFlowType = $staropt$star !== undefined ? $staropt$star : /* USER_SRP_AUTH */1;
-  return /* record */[
-          /* pool */pool,
-          /* clientId */clientId,
-          /* endpoint */"https://cognito-idp." + (toString$1(region) + ".amazonaws.com/"),
-          /* authenticationFlowType */authenticationFlowType
-        ];
+  return {
+          pool: pool,
+          clientId: clientId,
+          endpoint: "https://cognito-idp." + (toString$1(region) + ".amazonaws.com/"),
+          authenticationFlowType: authenticationFlowType
+        };
 }
 
 var Config = {
@@ -121,11 +122,9 @@ function request(config, operation, params) {
   headers["X-Amz-Target"] = target;
   headers["Content-Type"] = "application/x-amz-json-1.1";
   headers["X-Amz-User-Agent"] = "reason-cognito/0.1.x js";
-  params["ClientId"] = config[/* clientId */1];
-  var settings = Fetch.RequestInit.make(/* Post */2, Caml_option.some(headers), Caml_option.some(JSON.stringify(params)), undefined, undefined, undefined, undefined, /* NoCache */3, undefined, undefined, undefined)(/* () */0);
-  console.log("Fetching...");
-  console.log(settings);
-  return Future.flatMapOk(FutureJs.fromPromise(fetch(config[/* endpoint */2], settings), (function (fetchError) {
+  params["ClientId"] = config.clientId;
+  var body = JSON.stringify(params);
+  return Future.flatMapOk(FutureJs.fromPromise(fetch(config.endpoint, Fetch.RequestInit.make(/* Post */2, Caml_option.some(headers), Caml_option.some(body), undefined, undefined, undefined, undefined, /* NoCache */3, undefined, undefined, undefined)(/* () */0)), (function (fetchError) {
                     return /* `ReasonCognitoClientError */[
                             -291143216,
                             fetchError
@@ -145,10 +144,10 @@ function request(config, operation, params) {
                                         )
                                     )
                                 );
-                              return /* record */[
-                                      /* status */status,
-                                      /* json */json
-                                    ];
+                              return {
+                                      status: status,
+                                      json: json
+                                    };
                             }));
               }));
 }
@@ -176,9 +175,9 @@ function signUp(config, username, password, $staropt$star, $staropt$star$1, anal
   params["Username"] = username;
   params["ValidationData"] = Utils.jsonMapString(validationData);
   return Future.flatMapOk(request(config, /* SignUp */7, params), (function (res) {
-                var match = res[/* status */0];
+                var match = res.status;
                 var tmp;
-                tmp = match.tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_signUpResponse, res[/* json */1])]) : /* Error */Block.__(1, [Errors.SignUpErrors.makeFromJson(res[/* json */1])]);
+                tmp = match.tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_signUpResponse, res.json)]) : /* Error */Block.__(1, [Errors.SignUpErrors.makeFromJson(res.json)]);
                 return Future.value(tmp);
               }));
 }
@@ -200,7 +199,7 @@ function confirmSignUp(config, username, confirmationCode, $staropt$star, secret
   params["Username"] = username;
   return Future.flatMapOk(request(config, /* ConfirmSignUp */2, params), (function (param) {
                 var tmp;
-                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ConfirmSignUp.makeFromJson(param[/* json */1])]);
+                tmp = param.status.tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ConfirmSignUp.makeFromJson(param.json)]);
                 return Future.value(tmp);
               }));
 }
@@ -216,8 +215,8 @@ function initiateAuth(config, authParameters, authFlow, clientMetadata, analytic
     params["ClientMetadata"] = Caml_option.valFromOption(clientMetadata);
   }
   return Utils.andIfOk(request(config, /* InitiateAuth */4, params), (function (param) {
-                var json = param[/* json */1];
-                if (param[/* status */0].tag === /* Success */1) {
+                var json = param.json;
+                if (param.status.tag === /* Success */1) {
                   return /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_authenticationResponse, json)]);
                 } else {
                   return /* Error */Block.__(1, [Errors.InitiateAuth.makeFromJson(json)]);
@@ -234,10 +233,10 @@ function respondToAuthChallenge(config, challengeName, challengeResponses, sessi
   if (challengeResponses !== undefined) {
     var match = challengeResponses;
     var data = { };
-    data["USERNAME"] = match[/* userIdForSrp */1];
-    data["PASSWORD_CLAIM_SECRET_BLOCK"] = match[/* secretBlock */0];
-    data["TIMESTAMP"] = match[/* timestamp */3];
-    data["PASSWORD_CLAIM_SIGNATURE"] = match[/* signature */2];
+    data["USERNAME"] = match.userIdForSrp;
+    data["PASSWORD_CLAIM_SECRET_BLOCK"] = match.secretBlock;
+    data["TIMESTAMP"] = match.timestamp;
+    data["PASSWORD_CLAIM_SIGNATURE"] = match.signature;
     params["ChallengeResponses"] = data;
   }
   if (clientMetadata !== undefined) {
@@ -247,52 +246,53 @@ function respondToAuthChallenge(config, challengeName, challengeResponses, sessi
     params["Session"] = session;
   }
   return Future.flatMapOk(request(config, /* RespondToAuthChallenge */6, params), (function (param) {
-                var json = param[/* json */1];
+                var json = param.json;
                 var tmp;
-                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_authenticationResponse, json)]) : /* Error */Block.__(1, [Errors.RespondToAuthChallenge.makeFromJson(json)]);
+                tmp = param.status.tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_authenticationResponse, json)]) : /* Error */Block.__(1, [Errors.RespondToAuthChallenge.makeFromJson(json)]);
                 return Future.value(tmp);
               }));
 }
 
 function initiateSRPAuth(config, authParameters, $staropt$star, clientMetadata, analyticsEndpointId, param) {
   var authFlow = $staropt$star !== undefined ? $staropt$star : /* USER_SRP_AUTH */1;
-  var srpConfig = SRP.make(SRP.KnownSafePrimes.bit3072);
+  var init = SRP.KnownSafePrimes.bit3072;
+  var srpConfig = SRP.make({
+        hex: init.hex,
+        generator: 2
+      });
   var match = Js_dict.get(authParameters, "PASSWORD");
-  var srpPassword = match !== undefined ? (Js_dict.unsafeDeleteKey(authParameters, "PASSWORD"), match) : "";
+  var password = match !== undefined ? (Js_dict.unsafeDeleteKey(authParameters, "PASSWORD"), match) : "";
   var params = { };
   if (analyticsEndpointId !== undefined) {
     params["AnalyticsMetadata"] = Caml_option.valFromOption(analyticsEndpointId);
   }
   params["AuthFlow"] = toString(authFlow);
-  authParameters["SRP_A"] = SRP.hexStrFromBigInt(srpConfig[/* bigA */1]);
+  authParameters["SRP_A"] = SRP.hexStrFromBigInt(srpConfig.bigA);
   params["AuthParameters"] = Utils.makeJsonStringsFromDictValues(authParameters);
   if (clientMetadata !== undefined) {
     params["ClientMetadata"] = Caml_option.valFromOption(clientMetadata);
   }
   return Future.flatMapOk(Utils.andIfOk(Utils.andIfOk(request(config, /* InitiateAuth */4, params), (function (param) {
-                        var json = param[/* json */1];
-                        if (param[/* status */0].tag === /* Success */1) {
+                        var json = param.json;
+                        if (param.status.tag === /* Success */1) {
                           return /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_authSRPResponse, json)]);
                         } else {
                           return /* Error */Block.__(1, [Errors.InitiateAuth.makeFromJson(json)]);
                         }
                       })), (function (param) {
-                    var challengeParameters = param[/* challengeParameters */1];
-                    if (param[/* challengeName */0] !== -125280006) {
+                    var challengeParameters = param.challengeParameters;
+                    if (param.challengeName !== -125280006) {
                       return /* Error */Block.__(1, [/* ReasonCognitoUnknownError */536808491]);
                     } else {
                       var pool = getPoolId(config);
-                      var params_000 = /* username */challengeParameters[/* userIdForSrp */4];
-                      var params_002 = /* bigB */SRP.bigIntFromHexStr(challengeParameters[/* srpB */2]);
-                      var params_003 = /* salt */SRP.bigIntFromHexStr(challengeParameters[/* salt */0]);
-                      var params = /* record */[
-                        params_000,
-                        /* password */srpPassword,
-                        params_002,
-                        params_003,
-                        /* pool */pool
-                      ];
-                      var keyResult = SRP.makeAuthenticationKey(srpConfig, params);
+                      var keyResult = SRP.makeAuthenticationKey(srpConfig, {
+                            username: challengeParameters.userIdForSrp,
+                            password: password,
+                            bigB: challengeParameters.srpB,
+                            salt: challengeParameters.salt,
+                            pool: pool
+                          });
+                      console.log("result", Belt_Result.getExn(keyResult));
                       if (keyResult.tag) {
                         return /* Error */Block.__(1, [/* ReasonCognitoSRPError */-447216412]);
                       } else {
@@ -311,7 +311,7 @@ function changePassword(config, accessToken, previousPassword, proposedPassword,
   params["ProposedPassword"] = proposedPassword;
   return Future.flatMapOk(request(config, /* ChangePassword */0, params), (function (param) {
                 var tmp;
-                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ChangePassword.makeFromJson(param[/* json */1])]);
+                tmp = param.status.tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ChangePassword.makeFromJson(param.json)]);
                 return Future.value(tmp);
               }));
 }
@@ -329,7 +329,7 @@ function confirmForgotPassword(config, username, password, confirmationCode, ana
   params["Username"] = username;
   return Future.flatMapOk(request(config, /* ConfirmForgotPassword */1, params), (function (param) {
                 var tmp;
-                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ConfirmForgotPassword.makeFromJson(param[/* json */1])]);
+                tmp = param.status.tag === /* Success */1 ? /* Ok */Block.__(0, [/* () */0]) : /* Error */Block.__(1, [Errors.ConfirmForgotPassword.makeFromJson(param.json)]);
                 return Future.value(tmp);
               }));
 }
@@ -344,9 +344,9 @@ function forgotPassword(config, username, analyticsEndpointId, clientMetadata, p
   }
   params["Username"] = username;
   return Future.flatMapOk(request(config, /* ForgotPassword */3, params), (function (param) {
-                var json = param[/* json */1];
+                var json = param.json;
                 var tmp;
-                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_codeDeliveryResponse, json)]) : /* Error */Block.__(1, [Errors.ForgotPassword.makeFromJson(json)]);
+                tmp = param.status.tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_codeDeliveryResponse, json)]) : /* Error */Block.__(1, [Errors.ForgotPassword.makeFromJson(json)]);
                 return Future.value(tmp);
               }));
 }
@@ -361,9 +361,9 @@ function resendConfirmationCode(config, username, analyticsEndpointId, clientMet
   }
   params["Username"] = username;
   return Future.flatMapOk(request(config, /* ResendConfirmationCode */5, params), (function (param) {
-                var json = param[/* json */1];
+                var json = param.json;
                 var tmp;
-                tmp = param[/* status */0].tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_codeDeliveryResponse, json)]) : /* Error */Block.__(1, [Errors.ResendConfirmationCode.makeFromJson(json)]);
+                tmp = param.status.tag === /* Success */1 ? /* Ok */Block.__(0, [Curry._1(CognitoJson_bs.read_codeDeliveryResponse, json)]) : /* Error */Block.__(1, [Errors.ResendConfirmationCode.makeFromJson(json)]);
                 return Future.value(tmp);
               }));
 }

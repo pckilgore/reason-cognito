@@ -18,13 +18,13 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "bs-platform": "6.2.1",
+    "bs-platform": "^7.0.1",
     "serve": "^11.1.0"
   },
   "dependencies": {
     "@ahrefs/bs-atdgen-codec-runtime": "^2.0.0",
     "@pckilgore/bs-biginteger": "^1.0.1",
-    "@pckilgore/bs-crypto-js": "^0.1.2",
+    "@pckilgore/bs-crypto-js": "0.2.0",
     "big-integer": "^1.6.48",
     "bs-fetch": "^0.5.0",
     "isomorphic-fetch": "^2.2.1",

@@ -19,10 +19,10 @@
   resolved "https://registry.yarnpkg.com/@pckilgore/bs-biginteger/-/bs-biginteger-1.0.1.tgz#2d27f98451cb8d886855d2b36207a64edb666fef"
   integrity sha512-N06Z8OmVRJI1Mzv4BvgzrGT1/46Ni51g38N2qoA5ZnAqxjdveLSHgiNxQCGeW2FKyubjzokqjsbpRpp+pgf4wA==
 
-"@pckilgore/bs-crypto-js@^0.1.2":
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/@pckilgore/bs-crypto-js/-/bs-crypto-js-0.1.2.tgz#389450a2e9a26961a226f6d4353063f4e5d8c343"
-  integrity sha512-iGewJhptz+KUBKRzWVQNFDtuyknXxbe9un1RO0PRniHDS1vcGR65Bc2TQ0X7iiacJa5t8LyjtwK1HVeGRxoIDA==
+"@pckilgore/bs-crypto-js@0.2.0":
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/@pckilgore/bs-crypto-js/-/bs-crypto-js-0.2.0.tgz#8f5cdd72ecf1d3655986e8da421f3ad25e635fc3"
+  integrity sha512-K7lo8Mr/z7u7xPnRRrCa/paPwgH1YzOT2RbRW9jaSyvlhOYYnVi0XRMRhLoQPad1D+wqAXKEJ0vHqDDhwKgKoA==
   dependencies:
     crypto-js "3.1.9-1"
 
@@ -114,10 +114,10 @@ bs-fetch@^0.5.0:
   resolved "https://registry.npmjs.org/bs-fetch/-/bs-fetch-0.5.0.tgz#6913b1d1ddfa0b0a4b832357854e9763d61d4b28"
   integrity sha512-cGjwRpyNcIaX+p2ssy/38zs7BM/miKNgmOR3NEhxKFete5mR05JcvjuV4raG89oGCG281SU1b56TTAKmf9VCug==
 
-bs-platform@6.2.1:
-  version "6.2.1"
-  resolved "https://registry.npmjs.org/bs-platform/-/bs-platform-6.2.1.tgz#30266c7f23a3b323e1fc9596a9a6eb9f053981b4"
-  integrity sha512-FmQ8kYV52A0Y302qh6o0/J9TO+kHzsjGQnsjrg/ONUYIY/jWzBnt9dCBO6EBnaEKfFJLqk5JrUDCxuihqtTcnw==
+bs-platform@^7.0.1:
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/bs-platform/-/bs-platform-7.0.1.tgz#1d7b0ef6088b998dceee5db74a7cd8f01c20a3bd"
+  integrity sha512-UjStdtHhbtC/l6vKJ1XRDqrPk7rFf5PLYHtRX3akDXEYVnTbN36z0g4DEr5mU8S0N945e33HYts9x+i7hKKpZQ==
 
 bytes@3.0.0:
   version "3.0.0"

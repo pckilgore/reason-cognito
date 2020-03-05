@@ -135,19 +135,21 @@ module Client = {
     // Add the configured clientId to the request.
     Js.Dict.set(params, "ClientId", Js.Json.string(config.clientId));
 
-    let settings =
+    let body =
+      Fetch.BodyInit.make(Js.Json.stringify(Js.Json.object_(params)));
+
+    // Js.log("Fetching...");
+    // Js.log(body);
+    Fetch.fetchWithInit(
+      config.endpoint,
       Fetch.RequestInit.make(
         ~method_=Post,
         ~cache=NoCache,
         ~headers=Fetch.HeadersInit.makeWithDict(headers),
-        ~body=
-          Fetch.BodyInit.make(Js.Json.stringify(Js.Json.object_(params))),
+        ~body,
         (),
-      );
-
-    Js.log("Fetching...");
-    Js.log(settings);
-    Fetch.fetchWithInit(config.endpoint, settings)
+      ),
+    )
     // Error = fetch did not do anything.
     ->FutureJs.fromPromise(fetchError =>
         `ReasonCognitoClientError(fetchError)
@@ -485,9 +487,10 @@ let initiateSRPAuth =
     ) => {
   // https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html
 
-  let srpConfig = SRP.make(SRP.KnownSafePrimes.bit3072);
+  // For whatever reason amazon overrides the generator value given in the paper...
+  let srpConfig = SRP.(make({...KnownSafePrimes.bit3072, generator: 2}));
 
-  let srpPassword =
+  let password =
     switch (Js.Dict.get(authParameters, "PASSWORD")) {
     | Some(password) =>
       Js.Dict.unsafeDeleteKey(. authParameters, "PASSWORD");
@@ -515,6 +518,7 @@ let initiateSRPAuth =
     "AuthParameters",
     Js.Json.object_(makeJsonStringsFromDictValues(authParameters)),
   );
+
   switch (clientMetadata) {
   | Some(data) =>
     Js.Dict.set(params, "ClientMetadata", Js.Json.object_(data))
@@ -534,14 +538,14 @@ let initiateSRPAuth =
       | `PASSWORD_VERIFIER =>
         let CognitoJson_bs.{userIdForSrp, srpB, salt} = challengeParameters;
         let pool = Config.getPoolId(config);
-        let params: SRP.keyParameters = {
-          bigB: SRP.bigIntFromHexStr(srpB),
-          salt: SRP.bigIntFromHexStr(salt),
-          username: userIdForSrp,
-          password: srpPassword,
-          pool,
-        };
-        let keyResult = SRP.makeAuthenticationKey(srpConfig, params);
+        let keyResult =
+          SRP.makeAuthenticationKey(
+            srpConfig,
+            {bigB: srpB, salt, username: userIdForSrp, password, pool},
+          );
+
+        Js.log2("result", Belt.Result.getExn(keyResult));
+
         switch (keyResult) {
         | Error(_) => Belt.Result.Error(`ReasonCognitoSRPError)
         | Ok(key) =>

@@ -1,4 +1,4 @@
-SRP.(make(KnownSafePrimes.bit3072));
+// let srpConfig = SRP.(make({...KnownSafePrimes.bit3072, generator: 2}));
 
 let auth =
   Cognito.Config.make(
@@ -7,11 +7,10 @@ let auth =
     ~pool="us-east-2_pTFKTGtS3",
     (),
   );
-
 let authParameters = Js.Dict.empty();
 Js.Dict.set(authParameters, "USERNAME", "sarah7");
 Js.Dict.set(authParameters, "PASSWORD", "Password12345@!");
+auth->Cognito.initiateSRPAuth(~authParameters, ())->Future.tap(Js.log);
 
-auth
-->Cognito.initiateSRPAuth(~authParameters, ())
-->Future.tapError(result => Js.log2("err!", result));
+// Stop weird EOF comment reformatting;
+let eof = 0;

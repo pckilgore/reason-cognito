@@ -23,7 +23,7 @@ module Date: {let make: unit => string;} = {
    */
   let make = () => {
     open Js.Date;
-    let now = make();
+    let now = Js.Date.make();
     let day = dayIndex[getUTCDay(now)->int_of_float];
     let month = monthIndex[getUTCMonth(now)->int_of_float];
     let date = getUTCDate(now);
@@ -164,9 +164,8 @@ module A: {
 
         // See constraints from spec.  We retry with a new smallA if this is
         // true.
-        let invalid = mod_(bigA, `BigInt(bigN))->equals(`Int(0));
         let retry =
-          invalid
+          mod_(bigA, `BigInt(bigN))->equals(`Int(0))
             ? None
             : {
               memoARecords := Some({small: smallA, big: bigA});
@@ -178,33 +177,36 @@ module A: {
   };
 };
 
-let hash = value => {
+let hashString = value => {
   open CryptoJs;
-  let hash = stringify(hex, sha256(value));
+  let hash = sha256(`String(value)) |> stringify(hex);
+  String.make(64 - Js.String.length(hash), '0') ++ hash;
+};
+
+let hashHexString = value => {
+  open CryptoJs;
+  let toHash = hex->parse(value);
+  let hash = sha256(`WordArr(toHash)) |> stringify(hex);
   String.make(64 - Js.String.length(hash), '0') ++ hash;
 };
 
 let makeSmallK = (bigN, smallG) => {
-  let hash =
-    hash("00" ++ hexStrFromBigInt(bigN) ++ "0" ++ hexStrFromBigInt(smallG));
+  let toHash =
+    "00" ++ hexStrFromBigInt(bigN) ++ "0" ++ hexStrFromBigInt(smallG);
+  let hash = hashHexString(toHash);
   bigIntFromHexStr(hash);
 };
 
 let make = ({hex, generator}: KnownSafePrimes.t) => {
+  // Pure from input
   let bigN = bigIntFromHexStr(hex);
   let smallG = BigInteger.bigIntBaseN(`Int(generator), `Int(16));
-  let A.{small: smallA, big: bigA} = A.makeValid(smallG, bigN, None);
   let smallK = makeSmallK(bigN, smallG);
-  {bigN, smallG, bigA, smallA, smallK};
-};
 
-/**
- * Make SRP (U)
- */
-let makeBigU = (bigA, bigB) => {
-  let hexA = hexStrFromBigInt(bigA);
-  let hexB = hexStrFromBigInt(bigB);
-  hash(hexA ++ hexB)->bigIntFromHexStr;
+  // Impure / random values
+  let A.{small: smallA, big: bigA} = A.makeValid(smallG, bigN, None);
+
+  {bigN, smallG, bigA, smallA, smallK};
 };
 
 /**
@@ -219,14 +221,6 @@ let padHex = hexStr =>
     hexStr;
   };
 
-type keyParameters = {
-  username: string,
-  password: string,
-  bigB: BigInteger.t,
-  salt: BigInteger.t,
-  pool: string,
-};
-
 /**
  * I don't quite understand what this is supposed to do over
  * regular old hmacing the key with the salt.  Basically some
@@ -234,23 +228,27 @@ type keyParameters = {
  *
  */
 let makeHKDF = (key, salt) => {
-  let infoBits = {js|Caldera Derived Key\u0001|js};
+  open CryptoJs;
+  // Like, wtf, seriously.
+  let infoBits = parse(utf8, "Caldera Derived Key");
 
-  let prk = CryptoJs.hmacSha256(`String(key), `String(salt));
-  let hmac = CryptoJs.hmacSha256(`String(infoBits), `WordArr(prk));
-  let hmacString = CryptoJs.stringify(CryptoJs.hex, hmac);
+  let prk = hmacSha256(`String(key), `String(salt));
+  let hmac = hmacSha256(`WordArr(infoBits), `WordArr(prk));
+  let hmacString = stringify(hex, hmac);
   Js.String.slice(~from=0, ~to_=16, hmacString);
 };
 
-let makeBigS = (t, params, smallX, bigU) => {
+/**
+ *  S = (B - kg^x) ^ (a + ux)   (computes session key)
+ */
+let makeBigS = (t, bigB, smallX, bigU) => {
   open BigInteger;
-  // User:  S = (B - kg^x) ^ (a + ux)   (computes session key)
   // g^x
   let gx = modPow(t.smallG, `BigInt(t.bigN), `BigInt(smallX));
   // k * g^x
   let kgx = multiply(t.smallK, `BigInt(gx));
   // B - kg^x
-  let bkgx = subtract(params.bigB, `BigInt(kgx));
+  let bkgx = subtract(bigB, `BigInt(kgx));
   // ux
   let ux = multiply(bigU, `BigInt(smallX));
   // a + ux
@@ -261,31 +259,53 @@ let makeBigS = (t, params, smallX, bigU) => {
   mod_(result, `BigInt(t.bigN));
 };
 
-let makeAuthenticationKey = (t, params) => {
-  open BigInteger;
-  let testB = mod_(params.bigB, `BigInt(t.bigN))->equals(`Int(0));
-  let bigU = makeBigU(t.bigA, params.bigB);
-  let testU = bigU->equals(`Int(0));
-
-  switch (testB, testU) {
-  | (true, _)
-  | (_, true) =>
-    // See the spec. I don't see how to recover, yet.
-    Belt.Result.Error(`ReasonCognitoSRPError)
-  | (_, _) =>
-    let usernamePassword =
-      params.pool ++ params.username ++ ":" ++ params.password;
-    let usernamePasswordHash = hash(usernamePassword);
-    let paddedSalt = hexStrFromBigInt(params.salt)->padHex;
-    let smallX = hash(paddedSalt ++ usernamePasswordHash)->bigIntFromHexStr;
-    let bigS = makeBigS(t, params, smallX, bigU)->hexStrFromBigInt->padHex;
-    let hkdf = makeHKDF(bigS, hexStrFromBigInt(bigU)->padHex);
-    Belt.Result.Ok(hkdf);
-  };
+/**
+ * Make SRP (U)
+ */
+let makeBigU = (t, bigB) => {
+  open CryptoJs;
+  let hexA = hexStrFromBigInt(t.bigA)->parse(hex, _);
+  let hexB = hexStrFromBigInt(bigB)->parse(hex, _);
+  let ab = WordArray.concat(hexA, hexB);
+  stringify(hex, ab)->hashHexString->bigIntFromHexStr;
 };
+
+type rawKeyParameters = {
+  username: string,
+  password: string,
+  bigB: string,
+  salt: string,
+  pool: string,
+};
+
+let checkValidity = (t, number) => {
+  BigInteger.(mod_(number, `BigInt(t.bigN))->notEquals(`Int(0)))
+    ? Belt.Result.Ok(number)
+    : Belt.Result.Error(
+        `ReasonCognitoSRPError("Server responded with invalid SRP Parameter"),
+      );
+};
+
+let makeAuthenticationKey = (t, {bigB, pool, salt, username, password}) =>
+  bigIntFromHexStr(bigB)
+  ->checkValidity(t, _)
+  ->Belt.Result.map(makeBigU(t))
+  ->Belt.Result.flatMap(checkValidity(t))
+  ->Belt.Result.map(bigU => {
+      let hashedPw = hashString(pool ++ username ++ ":" ++ password);
+
+      // You ended debugging individual values here!  hashedPw is good.
+      let paddedSalt = salt->padHex;
+      let bigB = bigIntFromHexStr(bigB);
+      let smallX = hashHexString(paddedSalt ++ hashedPw)->bigIntFromHexStr;
+      let bigS = makeBigS(t, bigB, smallX, bigU)->hexStrFromBigInt->padHex;
+      let hkdf = makeHKDF(bigS, hexStrFromBigInt(bigU)->padHex);
+      hkdf;
+    });
 
 let parseUtf = CryptoJs.parse(CryptoJs.utf8);
 let parseBase64 = CryptoJs.parse(CryptoJs.base64);
+let parseHex = CryptoJs.parse(CryptoJs.hex);
 
 type challengeResponse = {
   secretBlock: string,

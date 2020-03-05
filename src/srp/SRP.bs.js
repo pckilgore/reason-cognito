@@ -5,6 +5,7 @@ var Block = require("bs-platform/lib/js/block.js");
 var $$String = require("bs-platform/lib/js/string.js");
 var BigInteger = require("@pckilgore/bs-biginteger/src/BigInteger.bs.js");
 var Caml_array = require("bs-platform/lib/js/caml_array.js");
+var Belt_Result = require("bs-platform/lib/js/belt_Result.js");
 var Caml_string = require("bs-platform/lib/js/caml_string.js");
 var BigInteger$1 = require("big-integer");
 var Core = require("crypto-js/core");
@@ -65,20 +66,20 @@ var $$Date$1 = {
   make: make
 };
 
-var bit2048 = /* record */[
-  /* hex */"AC6BDB41324A9A9BF166DE5E1389582FAF72B6651987EE07FC3192943DB56050A37329CBB4A099ED8193E0757767A13DD52312AB4B03310DCD7F48A9DA04FD50E8083969EDB767B0CF6095179A163AB3661A05FBD5FAAAE82918A9962F0B93B855F97993EC975EEAA80D740ADBF4FF747359D041D5C33EA71D281E446B14773BCA97B43A23FB801676BD207A436C6481F1D2B9078717461A5B9D32E688F87748544523B524B0D57D5EA77A2775D2ECFA032CFBDBF52FB3786160279004E57AE6AF874E7303CE53299CCC041C7BC308D82A5698F3A8D0C38271AE35F8E9DBFBB694B5C803D89F7AE435DE236D525F54759B65E372FCD68EF20FA7111F9E4AFF73",
-  /* generator */2
-];
+var bit2048 = {
+  hex: "AC6BDB41324A9A9BF166DE5E1389582FAF72B6651987EE07FC3192943DB56050A37329CBB4A099ED8193E0757767A13DD52312AB4B03310DCD7F48A9DA04FD50E8083969EDB767B0CF6095179A163AB3661A05FBD5FAAAE82918A9962F0B93B855F97993EC975EEAA80D740ADBF4FF747359D041D5C33EA71D281E446B14773BCA97B43A23FB801676BD207A436C6481F1D2B9078717461A5B9D32E688F87748544523B524B0D57D5EA77A2775D2ECFA032CFBDBF52FB3786160279004E57AE6AF874E7303CE53299CCC041C7BC308D82A5698F3A8D0C38271AE35F8E9DBFBB694B5C803D89F7AE435DE236D525F54759B65E372FCD68EF20FA7111F9E4AFF73",
+  generator: 2
+};
 
-var bit3072 = /* record */[
-  /* hex */"FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AAAC42DAD33170D04507A33A85521ABDF1CBA64ECFB850458DBEF0A8AEA71575D060C7DB3970F85A6E1E4C7ABF5AE8CDB0933D71E8C94E04A25619DCEE3D2261AD2EE6BF12FFA06D98A0864D87602733EC86A64521F2B18177B200CBBE117577A615D6C770988C0BAD946E208E24FA074E5AB3143DB5BFCE0FD108E4B82D120A93AD2CAFFFFFFFFFFFFFFFF",
-  /* generator */5
-];
+var bit3072 = {
+  hex: "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AAAC42DAD33170D04507A33A85521ABDF1CBA64ECFB850458DBEF0A8AEA71575D060C7DB3970F85A6E1E4C7ABF5AE8CDB0933D71E8C94E04A25619DCEE3D2261AD2EE6BF12FFA06D98A0864D87602733EC86A64521F2B18177B200CBBE117577A615D6C770988C0BAD946E208E24FA074E5AB3143DB5BFCE0FD108E4B82D120A93AD2CAFFFFFFFFFFFFFFFF",
+  generator: 5
+};
 
-var bit4096 = /* record */[
-  /* hex */"FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AAAC42DAD33170D04507A33A85521ABDF1CBA64ECFB850458DBEF0A8AEA71575D060C7DB3970F85A6E1E4C7ABF5AE8CDB0933D71E8C94E04A25619DCEE3D2261AD2EE6BF12FFA06D98A0864D87602733EC86A64521F2B18177B200CBBE117577A615D6C770988C0BAD946E208E24FA074E5AB3143DB5BFCE0FD108E4B82D120A92108011A723C12A787E6D788719A10BDBA5B2699C327186AF4E23C1A946834B6150BDA2583E9CA2AD44CE8DBBBC2DB04DE8EF92E8EFC141FBECAA6287C59474E6BC05D99B2964FA090C3A2233BA186515BE7ED1F612970CEE2D7AFB81BDD762170481CD0069127D5B05AA993B4EA988D8FDDC186FFB7DC90A6C08F4DF435C934063199FFFFFFFFFFFFFFFF",
-  /* generator */5
-];
+var bit4096 = {
+  hex: "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DDEF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7EDEE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3DC2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F83655D23DCA3AD961C62F356208552BB9ED529077096966D670C354E4ABC9804F1746C08CA18217C32905E462E36CE3BE39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF6955817183995497CEA956AE515D2261898FA051015728E5A8AAAC42DAD33170D04507A33A85521ABDF1CBA64ECFB850458DBEF0A8AEA71575D060C7DB3970F85A6E1E4C7ABF5AE8CDB0933D71E8C94E04A25619DCEE3D2261AD2EE6BF12FFA06D98A0864D87602733EC86A64521F2B18177B200CBBE117577A615D6C770988C0BAD946E208E24FA074E5AB3143DB5BFCE0FD108E4B82D120A92108011A723C12A787E6D788719A10BDBA5B2699C327186AF4E23C1A946834B6150BDA2583E9CA2AD44CE8DBBBC2DB04DE8EF92E8EFC141FBECAA6287C59474E6BC05D99B2964FA090C3A2233BA186515BE7ED1F612970CEE2D7AFB81BDD762170481CD0069127D5B05AA993B4EA988D8FDDC186FFB7DC90A6C08F4DF435C934063199FFFFFFFFFFFFFFFF",
+  generator: 5
+};
 
 var KnownSafePrimes = {
   bit2048: bit2048,
@@ -105,17 +106,19 @@ function makeRandomSmallA(bigN) {
   return bigIntFromHexStr(randomHex).mod(bigN);
 }
 
-var memoARecords = /* record */[/* contents */undefined];
+var memoARecords = {
+  contents: undefined
+};
 
 function clear(param) {
-  memoARecords[0] = undefined;
+  memoARecords.contents = undefined;
   return /* () */0;
 }
 
 function makeValid(smallG, bigN, _preValidatedResult) {
   while(true) {
     var preValidatedResult = _preValidatedResult;
-    var match = memoARecords[0];
+    var match = memoARecords.contents;
     if (match !== undefined) {
       return match;
     } else if (preValidatedResult !== undefined) {
@@ -123,14 +126,14 @@ function makeValid(smallG, bigN, _preValidatedResult) {
     } else {
       var smallA = makeRandomSmallA(bigN);
       var bigA = smallG.modPow(smallA, bigN);
-      var invalid = bigA.mod(bigN).equals(0);
-      var retry = invalid ? undefined : (memoARecords[0] = /* record */[
-            /* small */smallA,
-            /* big */bigA
-          ], /* record */[
-            /* small */smallA,
-            /* big */bigA
-          ]);
+      var match$1 = bigA.mod(bigN).equals(0);
+      var retry = match$1 ? undefined : (memoARecords.contents = {
+            small: smallA,
+            big: bigA
+          }, {
+            small: smallA,
+            big: bigA
+          });
       _preValidatedResult = retry;
       continue ;
     }
@@ -142,33 +145,34 @@ var A = {
   makeValid: makeValid
 };
 
-function hash(value) {
-  var hash$1 = EncHex.stringify(Sha256(value));
-  return $$String.make(64 - hash$1.length | 0, /* "0" */48) + hash$1;
+function hashString(value) {
+  var hash = EncHex.stringify(Sha256(value));
+  return $$String.make(64 - hash.length | 0, /* "0" */48) + hash;
+}
+
+function hashHexString(value) {
+  var toHash = EncHex.parse(value);
+  var hash = EncHex.stringify(Sha256(toHash));
+  return $$String.make(64 - hash.length | 0, /* "0" */48) + hash;
 }
 
 function makeSmallK(bigN, smallG) {
-  return bigIntFromHexStr(hash("00" + (BigInteger.toString(bigN, 16, /* () */0) + ("0" + BigInteger.toString(smallG, 16, /* () */0)))));
+  var toHash = "00" + (BigInteger.toString(bigN, 16, /* () */0) + ("0" + BigInteger.toString(smallG, 16, /* () */0)));
+  return bigIntFromHexStr(hashHexString(toHash));
 }
 
 function make$1(param) {
-  var bigN = bigIntFromHexStr(param[/* hex */0]);
-  var smallG = BigInteger$1(param[/* generator */1], 16);
-  var match = makeValid(smallG, bigN, undefined);
+  var bigN = bigIntFromHexStr(param.hex);
+  var smallG = BigInteger$1(param.generator, 16);
   var smallK = makeSmallK(bigN, smallG);
-  return /* record */[
-          /* bigN */bigN,
-          /* bigA */match[/* big */1],
-          /* smallA */match[/* small */0],
-          /* smallK */smallK,
-          /* smallG */smallG
-        ];
-}
-
-function makeBigU(bigA, bigB) {
-  var hexA = BigInteger.toString(bigA, 16, /* () */0);
-  var hexB = BigInteger.toString(bigB, 16, /* () */0);
-  return bigIntFromHexStr(hash(hexA + hexB));
+  var match = makeValid(smallG, bigN, undefined);
+  return {
+          bigN: bigN,
+          bigA: match.big,
+          smallA: match.small,
+          smallK: smallK,
+          smallG: smallG
+        };
 }
 
 function padHex(hexStr) {
@@ -182,38 +186,63 @@ function padHex(hexStr) {
 }
 
 function makeHKDF(key, salt) {
+  var infoBits = EncUtf8.parse("Caldera Derived Key");
   var prk = HmacSha256(key, salt);
-  var hmac = HmacSha256("Caldera Derived Key\u0001", prk);
+  var hmac = HmacSha256(infoBits, prk);
   var hmacString = EncHex.stringify(hmac);
   return hmacString.slice(0, 16);
 }
 
-function makeBigS(t, params, smallX, bigU) {
-  var gx = t[/* smallG */4].modPow(t[/* bigN */0], smallX);
-  var kgx = t[/* smallK */3].multiply(gx);
-  var bkgx = params[/* bigB */2].subtract(kgx);
+function makeBigS(t, bigB, smallX, bigU) {
+  var gx = t.smallG.modPow(t.bigN, smallX);
+  var kgx = t.smallK.multiply(gx);
+  var bkgx = bigB.subtract(kgx);
   var ux = bigU.multiply(smallX);
-  var aux = t[/* smallA */2].add(ux);
-  var result = bkgx.modPow(t[/* bigN */0], aux);
-  return result.mod(t[/* bigN */0]);
+  var aux = t.smallA.add(ux);
+  var result = bkgx.modPow(t.bigN, aux);
+  return result.mod(t.bigN);
 }
 
-function makeAuthenticationKey(t, params) {
-  var testB = params[/* bigB */2].mod(t[/* bigN */0]).equals(0);
-  var bigU = makeBigU(t[/* bigA */1], params[/* bigB */2]);
-  var testU = bigU.equals(0);
-  if (testB || testU) {
-    return /* Error */Block.__(1, [/* ReasonCognitoSRPError */-447216412]);
+function makeBigU(t, bigB) {
+  var __x = BigInteger.toString(t.bigA, 16, /* () */0);
+  var hexA = EncHex.parse(__x);
+  var __x$1 = BigInteger.toString(bigB, 16, /* () */0);
+  var hexB = EncHex.parse(__x$1);
+  var ab = hexA.concat(hexB);
+  return bigIntFromHexStr(hashHexString(EncHex.stringify(ab)));
+}
+
+function checkValidity(t, number) {
+  var match = number.mod(t.bigN).notEquals(0);
+  if (match) {
+    return /* Ok */Block.__(0, [number]);
   } else {
-    var usernamePassword = params[/* pool */4] + (params[/* username */0] + (":" + params[/* password */1]));
-    var usernamePasswordHash = hash(usernamePassword);
-    var paddedSalt = padHex(BigInteger.toString(params[/* salt */3], 16, /* () */0));
-    var smallX = bigIntFromHexStr(hash(paddedSalt + usernamePasswordHash));
-    var bigInt = makeBigS(t, params, smallX, bigU);
-    var bigS = padHex(BigInteger.toString(bigInt, 16, /* () */0));
-    var hkdf = makeHKDF(bigS, padHex(BigInteger.toString(bigU, 16, /* () */0)));
-    return /* Ok */Block.__(0, [hkdf]);
+    return /* Error */Block.__(1, [/* `ReasonCognitoSRPError */[
+                -447216412,
+                "Server responded with invalid SRP Parameter"
+              ]]);
   }
+}
+
+function makeAuthenticationKey(t, param) {
+  var pool = param.pool;
+  var salt = param.salt;
+  var bigB = param.bigB;
+  var password = param.password;
+  var username = param.username;
+  return Belt_Result.map(Belt_Result.flatMap(Belt_Result.map(checkValidity(t, bigIntFromHexStr(bigB)), (function (param) {
+                        return makeBigU(t, param);
+                      })), (function (param) {
+                    return checkValidity(t, param);
+                  })), (function (bigU) {
+                var hashedPw = hashString(pool + (username + (":" + password)));
+                var paddedSalt = padHex(salt);
+                var bigB$1 = bigIntFromHexStr(bigB);
+                var smallX = bigIntFromHexStr(hashHexString(paddedSalt + hashedPw));
+                var bigInt = makeBigS(t, bigB$1, smallX, bigU);
+                var bigS = padHex(BigInteger.toString(bigInt, 16, /* () */0));
+                return makeHKDF(bigS, padHex(BigInteger.toString(bigU, 16, /* () */0)));
+              }));
 }
 
 var partial_arg = EncUtf8;
@@ -228,20 +257,26 @@ function parseBase64(param) {
   return partial_arg$1.parse(param);
 }
 
+var partial_arg$2 = EncHex;
+
+function parseHex(param) {
+  return partial_arg$2.parse(param);
+}
+
 function makeResponseParams(pool, challengeParameters, key) {
   var timestamp = make(/* () */0);
   var now = parseUtf(timestamp);
   var pool$1 = parseUtf(pool);
-  var username = parseUtf(challengeParameters[/* userIdForSrp */4]);
-  var secret = parseBase64(challengeParameters[/* secretBlock */1]);
+  var username = parseUtf(challengeParameters.userIdForSrp);
+  var secret = parseBase64(challengeParameters.secretBlock);
   var message = pool$1.concat(username).concat(secret).concat(now);
   var signature = EncBase64.stringify(HmacSha256(message, key));
-  return /* record */[
-          /* secretBlock */challengeParameters[/* secretBlock */1],
-          /* userIdForSrp */challengeParameters[/* userIdForSrp */4],
-          /* signature */signature,
-          /* timestamp */timestamp
-        ];
+  return {
+          secretBlock: challengeParameters.secretBlock,
+          userIdForSrp: challengeParameters.userIdForSrp,
+          signature: signature,
+          timestamp: timestamp
+        };
 }
 
 exports.$$Date = $$Date$1;
@@ -252,15 +287,18 @@ exports.hexStrFromBigInt = hexStrFromBigInt;
 exports.makeRandomHexString = makeRandomHexString;
 exports.makeRandomSmallA = makeRandomSmallA;
 exports.A = A;
-exports.hash = hash;
+exports.hashString = hashString;
+exports.hashHexString = hashHexString;
 exports.makeSmallK = makeSmallK;
 exports.make = make$1;
-exports.makeBigU = makeBigU;
 exports.padHex = padHex;
 exports.makeHKDF = makeHKDF;
 exports.makeBigS = makeBigS;
+exports.makeBigU = makeBigU;
+exports.checkValidity = checkValidity;
 exports.makeAuthenticationKey = makeAuthenticationKey;
 exports.parseUtf = parseUtf;
 exports.parseBase64 = parseBase64;
+exports.parseHex = parseHex;
 exports.makeResponseParams = makeResponseParams;
 /* partial_arg Not a pure module */

@@ -5,8 +5,8 @@ var Curry = require("bs-platform/lib/js/curry.js");
 var CognitoJson_bs = require("./atd/CognitoJson_bs.bs.js");
 
 function make(param) {
-  var message = param[/* message */1];
-  switch (param[/* __type */0]) {
+  var message = param.message;
+  switch (param.__type) {
     case "InternalErrorException" :
         return /* `CognitoInternalError */[
                 636052602,
@@ -62,8 +62,8 @@ var Common = {
 };
 
 function make$1(param) {
-  var message = param[/* message */1];
-  switch (param[/* __type */0]) {
+  var message = param.message;
+  switch (param.__type) {
     case "CodeDeliveryFailureException" :
         return /* `CognitoCodeDeliveryFailure */[
                 307717752,
@@ -115,8 +115,8 @@ var ConfirmSignUp = {
 };
 
 function make$2(param) {
-  var message = param[/* message */1];
-  switch (param[/* __type */0]) {
+  var message = param.message;
+  switch (param.__type) {
     case "CodeDeliveryFailureException" :
         return /* `CognitoCodeDeliveryFailure */[
                 307717752,
@@ -168,8 +168,8 @@ var SignUpErrors = {
 };
 
 function make$3(param) {
-  var message = param[/* message */1];
-  switch (param[/* __type */0]) {
+  var message = param.message;
+  switch (param.__type) {
     case "InvalidSmsRoleAccessPolicysException" :
         return /* `CognitoInvalidSmsRoleAccessPolicys */[
                 598714580,
@@ -221,8 +221,8 @@ var InitiateAuth = {
 };
 
 function make$4(param) {
-  var message = param[/* message */1];
-  switch (param[/* __type */0]) {
+  var message = param.message;
+  switch (param.__type) {
     case "InvalidPasswordException" :
         return /* `CognitoInvalidPassword */[
                 -17702879,
@@ -269,8 +269,8 @@ var ChangePassword = {
 };
 
 function make$5(param) {
-  var message = param[/* message */1];
-  switch (param[/* __type */0]) {
+  var message = param.message;
+  switch (param.__type) {
     case "CodeMismatchException" :
         return /* `CognitoCodeMismatch */[
                 -817363892,
@@ -327,8 +327,8 @@ var ConfirmForgotPassword = {
 };
 
 function make$6(param) {
-  var message = param[/* message */1];
-  switch (param[/* __type */0]) {
+  var message = param.message;
+  switch (param.__type) {
     case "CodeDeliveryFailureException" :
         return /* `CognitoCodeDeliveryFailure */[
                 307717752,
@@ -385,8 +385,8 @@ var ForgotPassword = {
 };
 
 function make$7(param) {
-  var message = param[/* message */1];
-  switch (param[/* __type */0]) {
+  var message = param.message;
+  switch (param.__type) {
     case "CodeDeliveryFailureException" :
         return /* `CognitoCodeDeliveryFailure */[
                 307717752,
@@ -438,8 +438,8 @@ var ResendConfirmationCode = {
 };
 
 function make$8(param) {
-  var message = param[/* message */1];
-  switch (param[/* __type */0]) {
+  var message = param.message;
+  switch (param.__type) {
     case "AliasExistsException" :
         return /* `CognitoAliasExists */[
                 -498244869,
